@@ -2,8 +2,13 @@
 #ifndef  __INTER_LIB_H_
 #define  __INTER_LIB_H_
 
-#include "HTS_engine.h"
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <math.h>
+
+#include "HTS_engine.h"
 
 #ifdef  MYLIBDLL
 #define MYLIBDLL extern "C" _declspec(dllimport)
@@ -29,13 +34,17 @@ public:
     int line2short_array(const char *line, short *out, int out_size);
     int lines2short_array(const char *lines, short *out, int out_size);
 
-    int line2wav(const char *line, const char *wav_name);
-    int lines2wav(const char *line, const char *wav_name);
-    int line2wav_old(const char *line, const char *wav_name);
+	/* Error: output error message */
+	void Error(const int error, char *message, ...);
 
+	/* Getfp: wrapper for fopen */
+	FILE *Getfp(const char *name, const char *opt);
+
+	/* GetNumInterp: get number of speakers for interpolation from argv */
+	int GetNumInterp(int argc, char **argv_search);
 
 private:
-    HTS_Engine *engine;
+    HTS_Engine engine;
     STable *wt, *ct;
     Table *pw, *pp, *ip;
 

@@ -1,10 +1,10 @@
 /* ----------------------------------------------------------------- */
-/*           The HMM-Based Speech Synthesis System (HTS)             */
-/*           hts_engine API developed by HTS Working Group           */
+/*           The HMM-Based Speech Synthesis Engine "hts_engine API"  */
+/*           developed by HTS Working Group                          */
 /*           http://hts-engine.sourceforge.net/                      */
 /* ----------------------------------------------------------------- */
 /*                                                                   */
-/*  Copyright (c) 2001-2008  Nagoya Institute of Technology          */
+/*  Copyright (c) 2001-2011  Nagoya Institute of Technology          */
 /*                           Department of Computer Science          */
 /*                                                                   */
 /*                2001-2008  Tokyo Institute of Technology           */
@@ -41,9 +41,17 @@
 /* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE           */
 /* POSSIBILITY OF SUCH DAMAGE.                                       */
 /* ----------------------------------------------------------------- */
-#ifndef  __HTS_ENGINE_H_
-#define  __HTS_ENGINE_H_
 
+#ifndef HTS_ENGINE_H
+#define HTS_ENGINE_H
+#ifdef __cplusplus
+#define HTS_ENGINE_H_START extern "C" {
+#define HTS_ENGINE_H_END   }
+#else
+#define HTS_ENGINE_H_START
+#define HTS_ENGINE_H_END
+#endif                          /* __CPLUSPLUS */
+HTS_ENGINE_H_START;
 
 #include <stdio.h>
 
@@ -52,10 +60,10 @@
 #ifdef PACKAGE_VERSION
 #define HTS_VERSION   PACKAGE_VERSION
 #else
-#define HTS_VERSION   "1.01"
+#define HTS_VERSION   "1.05"
 #endif
 #define HTS_URL       "http://hts-engine.sourceforge.net/"
-#define HTS_COPYRIGHT "2001-2008  Nagoya Institute of Technology", \
+#define HTS_COPYRIGHT "2001-2011  Nagoya Institute of Technology", \
                       "2001-2008  Tokyo Institute of Technology"
 #define HTS_NCOPYRIGHT 2
 
@@ -70,12 +78,104 @@ void HTS_get_copyright(char *str);
 typedef int HTS_Boolean;
 #ifndef TRUE
 #define TRUE  1
-#define FALSE 0
 #endif                          /* !TRUE */
+#ifndef FALSE
+#define FALSE 0
+#endif                          /* !FALSE */
 
 #define ZERO  1.0e-10           /* ~(0) */
 #define LZERO (-1.0e+10)        /* ~log(0) */
 #define LTPI  1.83787706640935  /* log(2*PI) */
+
+/*  -------------------------- audio ------------------------------  */
+
+/*
+// ori
+#if !defined(AUDIO_PLAY_WINCE) && !defined(AUDIO_PLAY_WIN32) && !defined(AUDIO_PLAY_PORTAUDIO) && !defined(AUDIO_PLAY_NONE)
+#if defined(__WINCE__) || defined(_WINCE) || defined(_WINCE) || defined(__WINCE)
+#define AUDIO_PLAY_WINCE
+#elif defined(__WIN32__) || defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#define AUDIO_PLAY_WIN32
+#else
+#define AUDIO_PLAY_NONE
+#endif                          
+#endif                          
+
+#if defined (AUDIO_PLAY_WIN32) || defined(AUDIO_PLAY_WINCE)
+#include <windows.h>
+#include <mmsystem.h>
+*/
+
+
+
+#if !defined(AUDIO_PLAY_WIN32) && !defined(AUDIO_PLAY_WINCE)
+#define AUDIO_PLAY_NONE
+#endif                          /* !AUDIO_PLAY_WIN32 && !AUDIO_PLAY_WINCE */
+
+/* HTS_Audio: For MS Windows (Windows Mobile) audio output device. */
+#if defined (AUDIO_PLAY_WIN32) || defined(AUDIO_PLAY_WINCE)
+#include<afxwin.h>
+#include<mmsystem.h>
+#ifdef AUDIO_PLAY_WIN32
+#pragma comment(lib,"winmm.lib")
+#endif                          /* AUDIO_PLAY_WIN32 */
+
+
+
+typedef struct _HTS_Audio {
+   int sampling_rate;           /* sampling rate */
+   int max_buff_size;           /* buffer size of audio output device */
+   HWAVEOUT hwaveout;           /* audio device handle */
+   WAVEFORMATEX waveformatex;   /* wave formatex */
+   short *buff;                 /* current buffer */
+   int buff_size;               /* current buffer size */
+   int which_buff;              /* double buffering flag */
+   HTS_Boolean now_buff_1;      /* double buffering flag */
+   HTS_Boolean now_buff_2;      /* double buffering flag */
+   WAVEHDR buff_1;              /* buffer */
+   WAVEHDR buff_2;              /* buffer */
+} HTS_Audio;
+#endif                          /* AUDIO_PLAY_WIN32 || AUDIO_PLAY_WINCE */
+
+/* HTS_Audio: audio output for PortAudio */
+#ifdef AUDIO_PLAY_PORTAUDIO
+#include "portaudio.h"
+typedef struct _HTS_Audio {
+   int sampling_rate;           /* sampling rate */
+   int max_buff_size;           /* buffer size of audio output device */
+   PaStreamParameters parameters;       /* parameters for output stream */
+   PaStream *stream;            /* output stream */
+   PaError err;                 /* error code */
+   short *buff;                 /* current buffer */
+   int buff_size;               /* current buffer size */
+} HTS_Audio;
+#endif                          /* AUDIO_PLAY_PORTAUDIO */
+
+/* HTS_Audio: dummy audio output */
+#ifdef AUDIO_PLAY_NONE
+typedef struct _HTS_Audio {
+   int i;                       /* make compiler happy */
+} HTS_Audio;
+#endif                          /* AUDIO_PLAY_NONE */
+
+/*  ------------------------ audio method -------------------------  */
+
+/* HTS_Audio_initialize: initialize audio */
+void HTS_Audio_initialize(HTS_Audio * audio, int sampling_rate,
+                          int max_buff_size);
+
+/* HTS_Audio_set_parameter: set parameters for audio */
+void HTS_Audio_set_parameter(HTS_Audio * audio, int sampling_rate,
+                             int max_buff_size);
+
+/* HTS_Audio_write: send data to audio */
+void HTS_Audio_write(HTS_Audio * audio, short data);
+
+/* HTS_Audio_flush: flush remain data */
+void HTS_Audio_flush(HTS_Audio * audio);
+
+/* HTS_Audio_clear: free audio */
+void HTS_Audio_clear(HTS_Audio * audio);
 
 /*  -------------------------- model ------------------------------  */
 
@@ -143,6 +243,7 @@ typedef struct _HTS_ModelSet {
    HTS_Stream duration;         /* duration PDFs and trees */
    HTS_Stream *stream;          /* parameter PDFs, trees and windows */
    HTS_Stream *gv;              /* GV PDFs */
+   HTS_Model gv_switch;         /* GV switch */
    int nstate;                  /* # of HMM states */
    int nstream;                 /* # of stream */
 } HTS_ModelSet;
@@ -163,8 +264,17 @@ void HTS_ModelSet_load_parameter(HTS_ModelSet * ms, FILE ** pdf_fp,
                                  int window_size, int interpolation_size);
 
 /* HTS_ModelSet_load_gv: load GV model */
-void HTS_ModelSet_load_gv(HTS_ModelSet * ms, FILE ** pdf_fp, int stream_index,
-                          int interpolation_size);
+void HTS_ModelSet_load_gv(HTS_ModelSet * ms, FILE ** pdf_fp, FILE ** tree_fp,
+                          int stream_index, int interpolation_size);
+
+/* HTS_ModelSet_have_gv_tree: if context-dependent GV is used, return true */
+HTS_Boolean HTS_ModelSet_have_gv_tree(HTS_ModelSet * ms, int stream_index);
+
+/* HTS_ModelSet_load_gv_switch: load GV switch */
+void HTS_ModelSet_load_gv_switch(HTS_ModelSet * ms, FILE * fp);
+
+/* HTS_ModelSet_have_gv_switch: if GV switch is used, return true */
+HTS_Boolean HTS_ModelSet_have_gv_switch(HTS_ModelSet * ms);
 
 /* HTS_ModelSet_get_nstate: get number of state */
 int HTS_ModelSet_get_nstate(HTS_ModelSet * ms);
@@ -210,9 +320,20 @@ int HTS_ModelSet_get_gv_interpolation_size(HTS_ModelSet * ms, int stream_index);
 /* HTS_ModelSet_use_gv: get GV flag */
 HTS_Boolean HTS_ModelSet_use_gv(HTS_ModelSet * ms, int index);
 
+/* HTS_ModelSet_get_duration_index: get index of duration tree and PDF */
+void HTS_ModelSet_get_duration_index(HTS_ModelSet * ms, char *string,
+                                     int *tree_index, int *pdf_index,
+                                     int interpolation_index);
+
 /* HTS_ModelSet_get_duration: get duration using interpolation weight */
 void HTS_ModelSet_get_duration(HTS_ModelSet * ms, char *string, double *mean,
                                double *vari, double *iw);
+
+/* HTS_ModelSet_get_parameter_index: get index of parameter tree and PDF */
+void HTS_ModelSet_get_parameter_index(HTS_ModelSet * ms, char *string,
+                                      int *tree_index, int *pdf_index,
+                                      int stream_index, int state_index,
+                                      int interpolation_index);
 
 /* HTS_ModelSet_get_parameter: get parameter using interpolation weight */
 void HTS_ModelSet_get_parameter(HTS_ModelSet * ms, char *string, double *mean,
@@ -220,26 +341,30 @@ void HTS_ModelSet_get_parameter(HTS_ModelSet * ms, char *string, double *mean,
                                 int state_index, double *iw);
 
 /* HTS_ModelSet_get_gv: get GV using interpolation weight */
-void HTS_ModelSet_get_gv(HTS_ModelSet * ms, double *mean, double *vari,
-                         int stream_index, double *iw);
+void HTS_ModelSet_get_gv(HTS_ModelSet * ms, char *string, double *mean,
+                         double *vari, int stream_index, double *iw);
+
+/* HTS_ModelSet_get_gv_switch: get GV switch */
+HTS_Boolean HTS_ModelSet_get_gv_switch(HTS_ModelSet * ms, char *string);
 
 /* HTS_ModelSet_clear: free model set */
 void HTS_ModelSet_clear(HTS_ModelSet * ms);
 
 /*  -------------------------- label ------------------------------  */
 
-/* HTS_LabelString: Individual label string with time infomation */
+/* HTS_LabelString: individual label string with time information */
 typedef struct _HTS_LabelString {
    struct _HTS_LabelString *next;       /* pointer to next label string */
    char *name;                  /* label string */
-   HTS_Boolean frame_flag;      /* flag for frame length modification */
-   double frame;                /* frame length specified in the given label */
+   double start;                /* start frame specified in the given label */
+   double end;                  /* end frame specified in the given label */
 } HTS_LabelString;
 
-/* HTS_Label: List of label strings. */
+/* HTS_Label: list of label strings */
 typedef struct _HTS_Label {
    HTS_LabelString *head;       /* pointer to the head of label string */
    int size;                    /* # of label strings */
+   HTS_Boolean frame_flag;      /* flag for frame length modification */
    double speech_speed;         /* speech speed rate */
 } HTS_Label;
 
@@ -267,8 +392,8 @@ void HTS_Label_load_from_string_list(HTS_Label * label, int sampling_rate,
 /* HTS_Label_set_speech_speed: set speech speed rate */
 void HTS_Label_set_speech_speed(HTS_Label * label, double f);
 
-/* HTS_Label_set_frame: set frame length */
-void HTS_Label_set_frame(HTS_Label * label, int string_index, double f);
+/* HTS_Label_set_frame_specified_flag: set frame specified flag */
+void HTS_Label_set_frame_specified_flag(HTS_Label * label, HTS_Boolean i);
 
 /* HTS_Label_get_size: get number of label string */
 int HTS_Label_get_size(HTS_Label * label);
@@ -277,11 +402,13 @@ int HTS_Label_get_size(HTS_Label * label);
 char *HTS_Label_get_string(HTS_Label * label, int string_index);
 
 /* HTS_Label_get_frame_specified_flag: get frame specified flag */
-HTS_Boolean HTS_Label_get_frame_specified_flag(HTS_Label * label,
-                                               int string_index);
+HTS_Boolean HTS_Label_get_frame_specified_flag(HTS_Label * label);
 
-/* HTS_Label_get_frame: get frame length */
-double HTS_Label_get_frame(HTS_Label * label, int string_index);
+/* HTS_Label_get_start_frame: get start frame */
+double HTS_Label_get_start_frame(HTS_Label * label, int string_index);
+
+/* HTS_Label_get_end_frame: get end frame */
+double HTS_Label_get_end_frame(HTS_Label * label, int string_index);
 
 /* HTS_Label_get_speech_speed: get speech speed rate */
 double HTS_Label_get_speech_speed(HTS_Label * label);
@@ -291,7 +418,7 @@ void HTS_Label_clear(HTS_Label * label);
 
 /*  -------------------------- sstream ----------------------------  */
 
-/* HTS_SStream: Individual state stream. */
+/* HTS_SStream: individual state stream */
 typedef struct _HTS_SStream {
    int vector_length;           /* vector length (include static and dynamic features) */
    double **mean;               /* mean vector sequence */
@@ -304,9 +431,10 @@ typedef struct _HTS_SStream {
    int win_max_width;           /* maximum width of windows */
    double *gv_mean;             /* mean vector of GV */
    double *gv_vari;             /* variance vector of GV */
+   HTS_Boolean *gv_switch;      /* GV flag sequence */
 } HTS_SStream;
 
-/* HTS_SStreamSet: Set of state stream. */
+/* HTS_SStreamSet: set of state stream */
 typedef struct _HTS_SStreamSet {
    HTS_SStream *sstream;        /* state streams */
    int nstream;                 /* # of streams */
@@ -394,6 +522,14 @@ double HTS_SStreamSet_get_gv_mean(HTS_SStreamSet * sss, int stream_index,
 double HTS_SStreamSet_get_gv_vari(HTS_SStreamSet * sss, int stream_index,
                                   int vector_index);
 
+/* HTS_SStreamSet_set_gv_switch: set GV switch */
+void HTS_SStreamSet_set_gv_switch(HTS_SStreamSet * sss, int stream_index,
+                                  int state_index, HTS_Boolean i);
+
+/* HTS_SStreamSet_get_gv_switch: get GV switch */
+HTS_Boolean HTS_SStreamSet_get_gv_switch(HTS_SStreamSet * sss, int stream_index,
+                                         int state_index);
+
 /* HTS_SStreamSet_clear: free state stream set */
 void HTS_SStreamSet_clear(HTS_SStreamSet * sss);
 
@@ -421,10 +557,10 @@ typedef struct _HTS_PStream {
    int *win_r_width;            /* right width of windows */
    double **win_coefficient;    /* window coefficients */
    HTS_Boolean *msd_flag;       /* Boolean sequence for MSD */
-   double *gv_buff;             /* buffer for GV calculation */
    double *gv_mean;             /* mean vector of GV */
    double *gv_vari;             /* variance vector of GV */
-   double gv_weight;            /* GV weight */
+   HTS_Boolean *gv_switch;      /* GV flag sequence */
+   int gv_length;               /* frame length for GV calculation */
 } HTS_PStream;
 
 /* HTS_PStreamSet: Set of PDF streams. */
@@ -472,22 +608,18 @@ void HTS_PStreamSet_clear(HTS_PStreamSet * pss);
 
 /*  -------------------------- gstream ----------------------------  */
 
-#ifndef HTS_EMBEDDED
 /* HTS_GStream: Generated parameter stream. */
 typedef struct _HTS_GStream {
    int static_length;           /* static features length */
    double **par;                /* generated parameter */
 } HTS_GStream;
-#endif                          /* !HTS_EMBEDDED */
 
 /* HTS_GStreamSet: Set of generated parameter stream. */
 typedef struct _HTS_GStreamSet {
    int total_nsample;           /* total sample */
    int total_frame;             /* total frame */
    int nstream;                 /* # of streams */
-#ifndef HTS_EMBEDDED
    HTS_GStream *gstream;        /* generated parameter streams */
-#endif                          /* !HTS_EMBEDDED */
    short *gspeech;              /* generated speech */
 } HTS_GStreamSet;
 
@@ -500,7 +632,9 @@ void HTS_GStreamSet_initialize(HTS_GStreamSet * gss);
 void HTS_GStreamSet_create(HTS_GStreamSet * gss, HTS_PStreamSet * pss,
                            int stage, HTS_Boolean use_log_gain,
                            int sampling_rate, int fperiod, double alpha,
-                           double beta, int audio_buff_size);
+                           double beta,
+                           HTS_Boolean * stop, double volume,
+                           HTS_Audio * audio);
 
 /* HTS_GStreamSet_get_total_nsample: get total number of sample */
 int HTS_GStreamSet_get_total_nsample(HTS_GStreamSet * gss);
@@ -508,19 +642,15 @@ int HTS_GStreamSet_get_total_nsample(HTS_GStreamSet * gss);
 /* HTS_GStreamSet_get_total_frame: get total number of frame */
 int HTS_GStreamSet_get_total_frame(HTS_GStreamSet * gss);
 
-#ifndef HTS_EMBEDDED
 /* HTS_GStreamSet_get_static_length: get static features length */
 int HTS_GStreamSet_get_static_length(HTS_GStreamSet * gss, int stream_index);
-#endif                          /* !HTS_EMBEDDED */
 
 /* HTS_GStreamSet_get_speech: get synthesized speech parameter */
 short HTS_GStreamSet_get_speech(HTS_GStreamSet * gss, int sample_index);
 
-#ifndef HTS_EMBEDDED
 /* HTS_GStreamSet_get_parameter: get generated parameter */
 double HTS_GStreamSet_get_parameter(HTS_GStreamSet * gss, int stream_index,
                                     int frame_index, int vector_index);
-#endif                          /* !HTS_EMBEDDED */
 
 /* HTS_GStreamSet_clear: free generated parameter stream set */
 void HTS_GStreamSet_clear(HTS_GStreamSet * gss);
@@ -529,7 +659,7 @@ void HTS_GStreamSet_clear(HTS_GStreamSet * gss);
 
 /* HTS_Global: Global settings. */
 typedef struct _HTS_Global {
-   int stage;                   /* Gamma=-1/stage : if stage=0 then Gamma=0 */
+   int stage;                   /* Gamma=-1/stage: if stage=0 then Gamma=0 */
    HTS_Boolean use_log_gain;    /* log gain flag (for LSP) */
    int sampling_rate;           /* sampling rate */
    int fperiod;                 /* frame period */
@@ -541,11 +671,14 @@ typedef struct _HTS_Global {
    double **parameter_iw;       /* weights for parameter interpolation */
    double **gv_iw;              /* weights for GV interpolation */
    double *gv_weight;           /* GV weights */
+   HTS_Boolean stop;            /* stop flag */
+   double volume;               /* volume */
 } HTS_Global;
 
 /* HTS_Engine: Engine itself. */
 typedef struct _HTS_Engine {
    HTS_Global global;           /* global settings */
+   HTS_Audio audio;             /* audio output */
    HTS_ModelSet ms;             /* set of duration models, HMMs and GV models */
    HTS_Label label;             /* label */
    HTS_SStreamSet sss;          /* set of state streams */
@@ -578,24 +711,38 @@ void HTS_Engine_load_parameter_from_fp(HTS_Engine * engine, FILE ** pdf_fp,
                                        int stream_index, HTS_Boolean msd_flag,
                                        int window_size, int interpolation_size);
 
-/* HTS_Engine_load_gv_from_fn: load GV pdfs from file names */
+/* HTS_Engine_load_gv_from_fn: load GV pdfs and trees from file names */
 void HTS_Engine_load_gv_from_fn(HTS_Engine * engine, char **pdf_fn,
-                                int stream_index, int interpolation_size);
+                                char **tree_fn, int stream_index,
+                                int interpolation_size);
 
-/* HTS_Engine_load_gv_from_fp: load GV pdfs from file pointers */
+/* HTS_Engine_load_gv_from_fp: load GV pdfs and trees from file pointers */
 void HTS_Engine_load_gv_from_fp(HTS_Engine * engine, FILE ** pdf_fp,
-                                int stream_index, int interpolation_size);
+                                FILE ** tree_fp, int stream_index,
+                                int interpolation_size);
+
+/* HTS_Engine_load_gv_switch_from_fn: load GV switch from file names */
+void HTS_Engine_load_gv_switch_from_fn(HTS_Engine * engine, char *fn);
+
+/* HTS_Engine_load_gv_switch_from_fp: load GV switch from file pointers */
+void HTS_Engine_load_gv_switch_from_fp(HTS_Engine * engine, FILE * fp);
 
 /* HTS_Engine_set_sampling_rate: set sampling rate */
 void HTS_Engine_set_sampling_rate(HTS_Engine * engine, int i);
 
+/* HTS_Engine_get_sampling_rate: get sampling rate */
+int HTS_Engine_get_sampling_rate(HTS_Engine * engine);
+
 /* HTS_Engine_set_fperiod: set frame shift */
 void HTS_Engine_set_fperiod(HTS_Engine * engine, int i);
+
+/* HTS_Engine_get_fperiod: get frame shift */
+int HTS_Engine_get_fperiod(HTS_Engine * engine);
 
 /* HTS_Engine_set_alpha: set alpha */
 void HTS_Engine_set_alpha(HTS_Engine * engine, double f);
 
-/* HTS_Engine_set_gamma: set gamma (gamma = -1 / i : if i=0 then gamma=0) */
+/* HTS_Engine_set_gamma: set gamma (Gamma=-1/i: if i=0 then Gamma=0) */
 void HTS_Engine_set_gamma(HTS_Engine * engine, int i);
 
 /* HTS_Engine_set_log_gain: set log gain flag (for LSP) */
@@ -606,6 +753,9 @@ void HTS_Engine_set_beta(HTS_Engine * engine, double f);
 
 /* HTS_Engine_set_audio_buff_size: set audio buffer size */
 void HTS_Engine_set_audio_buff_size(HTS_Engine * engine, int i);
+
+/* HTS_Engine_get_audio_buff_size: get audio buffer size */
+int HTS_Engine_get_audio_buff_size(HTS_Engine * engine);
 
 /* HTS_Egnine_set_msd_threshold: set MSD threshold */
 void HTS_Engine_set_msd_threshold(HTS_Engine * engine, int stream_index,
@@ -630,6 +780,32 @@ void HTS_Engine_set_gv_interpolation_weight(HTS_Engine * engine,
 /* HTS_Engine_set_gv_weight: set GV weight */
 void HTS_Engine_set_gv_weight(HTS_Engine * engine, int stream_index, double f);
 
+/* HTS_Engine_set_stop_flag: set stop flag */
+void HTS_Engine_set_stop_flag(HTS_Engine * engine, HTS_Boolean b);
+
+/* HTS_Engine_set_volume: set volume */
+void HTS_Engine_set_volume(HTS_Engine * engine, double f);
+
+/* HTS_Engine_get_total_state: get total number of state */
+int HTS_Engine_get_total_state(HTS_Engine * engine);
+
+/* HTS_Engine_set_state_mean: set mean value of state */
+void HTS_Engine_set_state_mean(HTS_Engine * engine, int stream_index,
+                               int state_index, int vector_index, double f);
+
+/* HTS_Engine_get_state_mean: get mean value of state */
+double HTS_Engine_get_state_mean(HTS_Engine * engine, int stream_index,
+                                 int state_index, int vector_index);
+
+/* HTS_Engine_get_state_duration: get state duration */
+int HTS_Engine_get_state_duration(HTS_Engine * engine, int state_index);
+
+/* HTS_Engine_get_nstream: get number of stream */
+int HTS_Engine_get_nstream(HTS_Engine * engine);
+
+/* HTS_Engine_get_nstate: get number of state */
+int HTS_Engine_get_nstate(HTS_Engine * engine);
+
 /* HTS_Engine_load_label_from_fn: load label from file pointer */
 void HTS_Engine_load_label_from_fn(HTS_Engine * engine, char *fn);
 
@@ -652,17 +828,15 @@ void HTS_Engine_create_pstream(HTS_Engine * engine);
 /* HTS_Engine_create_gstream: synthesis speech */
 void HTS_Engine_create_gstream(HTS_Engine * engine);
 
-/* HTS_Engine_save_infomation: output trace infomation */
-void HTS_Engine_save_infomation(HTS_Engine * engine, FILE * fp);
+/* HTS_Engine_save_information: output trace information */
+void HTS_Engine_save_information(HTS_Engine * engine, FILE * fp);
 
 /* HTS_Engine_save_label: output label with time */
 void HTS_Engine_save_label(HTS_Engine * engine, FILE * fp);
 
-#ifndef HTS_EMBEDDED
 /* HTS_Engine_save_generated_parameter: output generated parameter */
 void HTS_Engine_save_generated_parameter(HTS_Engine * engine, FILE * fp,
                                          int stream_index);
-#endif                          /* !HTS_EMBEDDED */
 
 /* HTS_Engine_save_generated_speech: output generated speech */
 void HTS_Engine_save_generated_speech(HTS_Engine * engine, FILE * fp);
@@ -676,45 +850,11 @@ void HTS_Engine_refresh(HTS_Engine * engine);
 /* HTS_Engine_clear: free engine */
 void HTS_Engine_clear(HTS_Engine * engine);
 
-/*  -------------------------- audio ------------------------------  */
-
-#if !defined(AUDIO_PLAY_WIN32) && !defined(AUDIO_PLAY_WINCE)
-#define AUDIO_PLAY_NONE
-#endif                          /* !AUDIO_PLAY_WIN32 && !AUDIO_PLAY_WINCE */
-
-/* HTS_Audio: For MS Windows (Windows Mobile) audio output device. */
-#if defined (AUDIO_PLAY_WIN32) || defined(AUDIO_PLAY_WINCE)
-#include<afxwin.h>
-#include<mmsystem.h>
-#ifdef AUDIO_PLAY_WIN32
-#pragma comment(lib,"winmm.lib")
-#endif                          /* AUDIO_PLAY_WIN32 */
-typedef struct _HTS_Audio {
-   HWAVEOUT hwaveout;           /* audio device handle */
-   WAVEFORMATEX waveformatex;   /* wave formatex */
-   short *buff;                 /* current buffer */
-   int buff_size;               /* current buffer size */
-   int which_buff;              /* double buffering flag */
-   HTS_Boolean now_buff_1;      /* double buffering flag */
-   HTS_Boolean now_buff_2;      /* double buffering flag */
-   WAVEHDR buff_1;              /* buffer */
-   WAVEHDR buff_2;              /* buffer */
-   int max_buff_size;           /* buffer size of audio output device */
-} HTS_Audio;
-#endif                          /* AUDIO_PLAY_WIN32 || AUDIO_PLAY_WINCE */
-
-/* HTS_Audio: For Linux, etc. */
-#ifdef AUDIO_PLAY_NONE
-typedef struct _HTS_Audio {
-   int i;                       /* make compiler happy */
-} HTS_Audio;
-#endif                          /* AUDIO_PLAY_NONE */
-
 /*  -------------------------- vocoder ----------------------------  */
 
 /* HTS_Vocoder: structure for setting of vocoder */
 typedef struct _HTS_Vocoder {
-   int stage;                   /* Gamma=-1/stage : if stage=0 then Gamma=0 */
+   int stage;                   /* Gamma=-1/stage: if stage=0 then Gamma=0 */
    double gamma;                /* Gamma */
    HTS_Boolean use_log_gain;    /* log gain flag (for LSP) */
    int fprd;                    /* frame shift */
@@ -727,9 +867,9 @@ typedef struct _HTS_Vocoder {
    double pc;                   /* used in excitation generation */
    double p;                    /* used in excitation generation */
    double inc;                  /* used in excitation generation */
+   double *pulse_list;          /* used in excitation generation */
    int sw;                      /* switch used in random generator */
    int x;                       /* excitation signal */
-   HTS_Audio *audio;            /* pointer for audio device */
    double *freqt_buff;          /* used in freqt */
    int freqt_size;              /* buffer size for freqt */
    double *spectrum2en_buff;    /* used in spectrum2en */
@@ -738,7 +878,6 @@ typedef struct _HTS_Vocoder {
    double *postfilter_buff;     /* used in postfiltering */
    int postfilter_size;         /* buffer size for postfiltering */
    double *c, *cc, *cinc, *d1;  /* used in the MLSA/MGLSA filter */
-   double *pade;                /* used in mlsadf */
    double *lsp2lpc_buff;        /* used in lsp2lpc */
    int lsp2lpc_size;            /* buffer size of lsp2lpc */
    double *gc2gc_buff;          /* used in gc2gc */
@@ -750,12 +889,13 @@ typedef struct _HTS_Vocoder {
 /* HTS_Vocoder_initialize: initialize vocoder */
 void HTS_Vocoder_initialize(HTS_Vocoder * v, const int m, const int stage,
                             HTS_Boolean use_log_gain, const int rate,
-                            const int fperiod, int buff_size);
+                            const int fperiod);
 
 /* HTS_Vocoder_synthesize: pulse/noise excitation and MLSA/MGLSA filster based waveform synthesis */
 void HTS_Vocoder_synthesize(HTS_Vocoder * v, const int m, double lf0,
-                            double *spectrum, double alpha, double beta,
-                            short *rawdata);
+                            double *spectrum, const int nlpf, double *lpf,
+                            double alpha, double beta, double volume,
+                            short *rawdata, HTS_Audio * audio);
 
 /* HTS_Vocoder_postfilter_mcp: postfilter for MCP */
 void HTS_Vocoder_postfilter_mcp(HTS_Vocoder * v, double *mcp, const int m,
@@ -764,8 +904,6 @@ void HTS_Vocoder_postfilter_mcp(HTS_Vocoder * v, double *mcp, const int m,
 /* HTS_Vocoder_clear: clear vocoder */
 void HTS_Vocoder_clear(HTS_Vocoder * v);
 
-void HTS_Engine_save_riff2(HTS_Engine * engine, FILE * fp, double *data, int length);
+HTS_ENGINE_H_END;
 
-
-
-#endif // __HTS_ENGINE_H_
+#endif                          /* !HTS_ENGINE_H */

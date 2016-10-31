@@ -14,13 +14,6 @@
 
 TTS::TTS()
 {
-	if (this->engine != NULL)
-	{
-		delete this->engine;
-		this->engine = NULL;
-	}
-
-    this->engine = (HTS_Engine *)malloc(sizeof(HTS_Engine));
 
 
 }
@@ -33,12 +26,6 @@ TTS::~TTS()
 		fp_log = NULL;
 	}
 
-	if (engine != NULL)
-	{
-
-		free(engine);
-		engine = NULL;
-	}
 
 	if (wt != NULL)
 	{
@@ -77,122 +64,362 @@ TTS::~TTS()
 
 int TTS::init(const char *model_dir)
 {
-    fp_log = fopen("yl.log","w");
+	fp_log = fopen("yl.log", "w");
+	int num_argc = 10;
+	int i;
 
-    //声学模型相关文件的存储位置,写入字符串中
-    char *durname = new char[MAX_PATH_SIZE];
-    _snprintf(durname, MAX_PATH_SIZE-1, "%s\\model\\dur.pdf", model_dir);
-    char *durtreename = new char[MAX_PATH_SIZE];
-    _snprintf(durtreename, MAX_PATH_SIZE-1, "%s\\model\\tree-dur.inf", model_dir);
-    char *lspname = new char[MAX_PATH_SIZE];
-    _snprintf(lspname, MAX_PATH_SIZE-1, "%s\\model\\lsp.pdf", model_dir);
-    char *lsptreename = new char[MAX_PATH_SIZE];
-    _snprintf(lsptreename, MAX_PATH_SIZE-1, "%s\\model\\tree-lsp.inf", model_dir);
-    char *lspwinfn1 = new char[MAX_PATH_SIZE];
-    _snprintf(lspwinfn1, MAX_PATH_SIZE-1, "%s\\model\\lsp.win1", model_dir);
-    char *lspwinfn2 = new char[MAX_PATH_SIZE];
-    _snprintf(lspwinfn2, MAX_PATH_SIZE-1, "%s\\model\\lsp.win2", model_dir);
-    char *lspwinfn3 = new char[MAX_PATH_SIZE];
-    _snprintf(lspwinfn3, MAX_PATH_SIZE-1, "%s\\model\\lsp.win3", model_dir);
+	/* number of speakers for interpolation */
+	int num_interp = 0;
+	double *rate_interp = NULL;
 
-    char **lspwinfn     =   (char**)malloc(3*sizeof(char*));
-    lspwinfn[0]         =   lspwinfn1;
-    lspwinfn[1]         =   lspwinfn2;
-    lspwinfn[2]         =   lspwinfn3;
+	/* file names of models */
+	char **fn_ms_dur;
+	char **fn_ms_mgc; // -mm mgc.pdf
+	char **fn_ms_lf0; //  -mf lf0.pdf
+	char **fn_ms_lpf; // -ml lpf.pdf
+	/* number of each models for interpolation */
+	int num_ms_dur = 0, num_ms_mgc = 0, num_ms_lf0 = 0, num_ms_lpf = 0; // * * * 1
 
-    char *lf0name = new char[MAX_PATH_SIZE];
-    _snprintf(lf0name, MAX_PATH_SIZE-1, "%s\\model\\lf0.pdf", model_dir);
-    char *lf0treename = new char[MAX_PATH_SIZE];
-    _snprintf(lf0treename, MAX_PATH_SIZE-1, "%s\\model\\tree-lf0.inf", model_dir);
-    char *lf0winfn1 = new char[MAX_PATH_SIZE];
-    _snprintf(lf0winfn1, MAX_PATH_SIZE-1, "%s\\model\\lf0.win1", model_dir);
-    char *lf0winfn2 = new char[MAX_PATH_SIZE];
-    _snprintf(lf0winfn2, MAX_PATH_SIZE-1, "%s\\model\\lf0.win2", model_dir);
-    char *lf0winfn3 = new char[MAX_PATH_SIZE];
-    _snprintf(lf0winfn3, MAX_PATH_SIZE-1, "%s\\model\\lf0.win3", model_dir);
+	/* file names of trees */
+	char **fn_ts_dur;
+	char **fn_ts_mgc; // -tm tree-mgc.inf
+	char **fn_ts_lf0; // -tf tree-lf0.inf 
+	char **fn_ts_lpf; // -tl tree-lpf.inf
+	/* number of each trees for interpolation */
+	int num_ts_dur = 0, num_ts_mgc = 0, num_ts_lf0 = 0, num_ts_lpf = 0; // * * * 1
 
-    char **lf0winfn     =   (char**)malloc(3*sizeof(char*));
-    lf0winfn[0]         =   lf0winfn1;
-    lf0winfn[1]         =   lf0winfn2;
-    lf0winfn[2]         =   lf0winfn3;
+	/* file names of windows */
+	char **fn_ws_mgc; // -dm mgc.win1 -dm mgc.win2 -dm mgc.win3
+	char **fn_ws_lf0; // -df lf0.win1 -df lf0.win2 -df lf0.win3
+	char **fn_ws_lpf; // -dl lpf.win1
+	int num_ws_mgc = 0, num_ws_lf0 = 0, num_ws_lpf = 0; // 3 3 1 
 
-    HTS_Engine_initialize(engine, 2);
-    HTS_Engine_set_sampling_rate(engine, 16000);  //设置采样率
-    HTS_Engine_set_log_gain(engine, FALSE);       //是否采用对数增益
-    HTS_Engine_set_fperiod(engine, 80);           //帧移初始化
-    HTS_Engine_set_msd_threshold(engine, 1, 0.5);  //设置msd概率
+	/* file names of global variance */
+	char **fn_ms_gvm = NULL; // -cm gv-mgc.pdf
+	char **fn_ms_gvl = NULL;
+	char **fn_ms_gvf = NULL;
+	int num_ms_gvm = 0, num_ms_gvl = 0, num_ms_gvf = 0; // 1 
 
-    HTS_Engine_load_duration_from_fn(engine, &durname, &durtreename, 1);
+	/* file names of global variance trees */
+	char **fn_ts_gvm = NULL; // -em tree-gv-mgc.inf 
+	char **fn_ts_gvl = NULL;
+	char **fn_ts_gvf = NULL;
+	int num_ts_gvm = 0, num_ts_gvl = 0, num_ts_gvf = 0; // 1
 
-    HTS_Engine_load_parameter_from_fn(engine, &lspname, &lsptreename, lspwinfn, 0, FALSE, 3, 1);
-    
-    HTS_Engine_load_parameter_from_fn(engine, &lf0name, &lf0treename, lf0winfn, 1, TRUE, 3, 1);
-    free(lf0winfn);
+	/* file name of global variance switch */
+	char *fn_gv_switch = NULL;
 
-    //韵律词、韵律短语、语调短语模型
-    char *wm = new char[MAX_PATH_SIZE];
-    _snprintf(wm, MAX_PATH_SIZE-1, "%s/resource/ProsodicWordModel.txt", model_dir);
-    pw= ReadTable(wm);   //韵律词
+	/* global parameter */
+	int sampling_rate = 16000;
+	int fperiod = 80;
+	double alpha = 0.42;
+	int stage = 0;               /* Gamma=-1/stage: if stage=0 then Gamma=0 */
+	double beta = 0.0;
+	int audio_buff_size = 1600;
+	double uv_threshold = 0.5;
+	double gv_weight_mgc = 1.0;
+	double gv_weight_lf0 = 1.0;
+	double gv_weight_lpf = 1.0;
 
-    char *ppm = new char[MAX_PATH_SIZE];
-    _snprintf(ppm, MAX_PATH_SIZE-1, "%s/resource/ProsodicPhraseModel.txt", model_dir);
-    pp= ReadTable(ppm);  //韵律短语
 
-    char *ipm = new char[MAX_PATH_SIZE];
-    _snprintf(ipm, MAX_PATH_SIZE-1, "%s/resource/IntPhraseModel.txt", model_dir);
-    ip= ReadTable(ipm);       //语调短语
+	HTS_Boolean use_log_gain = FALSE;
 
-    char *dict = new char[MAX_PATH_SIZE];
-    _snprintf(dict, MAX_PATH_SIZE-1, "%s/resource/dict.txt", model_dir);
-    wt = ReadSTable(dict);   //字典
+	/* engine */
+	HTS_Engine engine;
 
-    char *c2p = new char[MAX_PATH_SIZE];
-    _snprintf(c2p, MAX_PATH_SIZE-1, "%s/resource/char2pinyin.txt", model_dir);
-    ct = ReadSTable(c2p);  //字音对照表
+	/* delta window handler for mel-cepstrum */
+	fn_ws_mgc = (char **)calloc(num_argc, sizeof(char *));
+	/* delta window handler for log f0 */
+	fn_ws_lf0 = (char **)calloc(num_argc, sizeof(char *));
+	/* delta window handler for low-pass filter */
+	fn_ws_lpf = (char **)calloc(num_argc, sizeof(char *));
 
-    TTS_Label_Init(); //初始化Label模块
+	/* prepare for interpolation */
+	num_interp = 1;
+	rate_interp = (double *)calloc(num_interp, sizeof(double));
+	for (i = 0; i < num_interp; i++)
+		rate_interp[i] = 1.0;
+
+	fn_ms_dur = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_mgc = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_lf0 = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_lpf = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_dur = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_mgc = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_lf0 = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_lpf = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_gvm = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_gvl = (char **)calloc(num_interp, sizeof(char *));
+	fn_ms_gvf = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_gvm = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_gvl = (char **)calloc(num_interp, sizeof(char *));
+	fn_ts_gvf = (char **)calloc(num_interp, sizeof(char *));
+
+	// 模型变量赋值 
+	char *fn_ts_dur_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_dur_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-dur.inf", model_dir);
+	fn_ts_dur[num_ts_dur++] = fn_ts_dur_tmp; // -td
+
+	char *fn_ts_lf0_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-lf0.inf", model_dir);
+	fn_ts_lf0[num_ts_lf0++] = fn_ts_lf0_tmp; // -tf
+
+	char *fn_ts_mgc_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-mgc.inf", model_dir);
+	fn_ts_mgc[num_ts_mgc++] = fn_ts_mgc_tmp; // -tm
+
+	char *fn_ts_lpf_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-lpf.inf", model_dir);
+	fn_ts_lpf[num_ts_lpf++] = fn_ts_lpf_tmp; // -tl
+
+	char *fn_ms_dur_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_dur_tmp, MAX_PATH_SIZE - 1, "%s\\model\\dur.pdf", model_dir);
+	fn_ms_dur[num_ms_dur++] = fn_ms_dur_tmp; // -md
+
+	char *fn_ms_lf0_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lf0.pdf", model_dir);
+	fn_ms_lf0[num_ms_lf0++] = fn_ms_lf0_tmp; // -mf
+
+	char *fn_ms_mgc_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\model\\mgc.pdf", model_dir);
+	fn_ms_mgc[num_ms_mgc++] = fn_ms_mgc_tmp; // -mm
+
+	char *fn_ms_lpf_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lpf.pdf", model_dir);
+	fn_ms_lpf[num_ms_lpf++] = fn_ms_lpf_tmp; // -ml
+
+	// -dm
+	char *fn_ws_mgc_tmp_1 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_mgc_tmp_1, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win1", model_dir);
+	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_1;
+
+	char *fn_ws_mgc_tmp_2 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_mgc_tmp_2, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win2", model_dir);
+	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_2;
+
+	char *fn_ws_mgc_tmp_3 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_mgc_tmp_3, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win3", model_dir);
+	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_3;
+	// -df
+	char *fn_ws_lf0_tmp_1 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_lf0_tmp_1, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win1", model_dir);
+	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_1;
+
+	char *fn_ws_lf0_tmp_2 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_lf0_tmp_2, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win2", model_dir);
+	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_2;
+
+	char *fn_ws_lf0_tmp_3 = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_lf0_tmp_3, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win3", model_dir);
+	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_3;
+
+	char *fn_ws_lpf_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ws_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lpf.win1", model_dir);
+	fn_ws_lpf[num_ws_lpf++] = fn_ws_lpf_tmp; // -dl
+
+	char *fn_ms_gvm_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-mgc.pdf", model_dir);
+	fn_ms_gvm[num_ms_gvm++] = fn_ms_gvm_tmp; // -cm
+
+	char *fn_ms_gvl_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ms_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-lf0.pdf", model_dir);
+	fn_ms_gvl[num_ms_gvl++] = fn_ms_gvl_tmp; // -cf 
+
+	char *fn_gv_switch_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_gv_switch_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-switch.inf", model_dir);
+	fn_gv_switch = fn_gv_switch_tmp; // -k
+
+	char *fn_ts_gvm_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-gv-mgc.inf", model_dir);
+	fn_ts_gvm[num_ts_gvm++] = fn_ts_gvm_tmp; // -em
+
+	char *fn_ts_gvl_tmp = new char[MAX_PATH_SIZE];
+	_snprintf(fn_ts_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-gv-lf0.inf", model_dir);
+	fn_ts_gvl[num_ts_gvl++] = fn_ts_gvl_tmp; // -ef 
+
+	// 数值 变量 直接赋值
+	sampling_rate = 44100; // -s
+	fperiod = 220; // -p
+	alpha = 0.55; // -a
+	stage = 0; // -g
+	use_log_gain = TRUE; // -l
+	beta = 0.4; // -b 
+	beta = 0.0; // -b ?  
 
 	
-	if (durname != NULL)
-	{
-		delete durname;
-		durname = NULL;
+
+	/* number of models,trees check */
+	printf("interp=%d\tts_dur=%d\tts_mgc=%d\tts_lf0=%d\tms_dur=%d\tms_mgc=%d\tms_lf0=%d",
+		num_interp, num_ts_dur, num_ts_mgc, num_ts_lf0, num_ms_dur, num_ms_mgc, num_ms_lf0);
+	
+	if (num_interp != num_ts_dur || num_interp != num_ts_mgc ||
+	num_interp != num_ts_lf0 || num_interp != num_ms_dur ||
+	num_interp != num_ms_mgc || num_interp != num_ms_lf0) {
+	Error(1, "hts_engine: specify %d models(trees) for each parameter.\n",
+	num_interp);
 	}
-	if (durtreename != NULL)
-	{
-		delete durtreename;
-		durtreename = NULL;
+	
+	if (num_ms_lpf > 0 || num_ts_lpf > 0) {
+		if (num_interp != num_ms_lpf || num_interp != num_ts_lpf) {
+			Error(1, "hts_engine: specify %d models(trees) for each parameter.\n",
+				num_interp);
+		}
 	}
-	if (lspname != NULL)
-	{
-		delete lspname;
-		lspname = NULL;
+
+	/* initialize (stream[0] = spectrum, stream[1] = lf0, stream[2] = low-pass filter) */
+	if (num_ms_lpf > 0 || num_ts_lpf > 0) {
+		HTS_Engine_initialize(&engine, 3);
 	}
-	if (lsptreename != NULL)
-	{
-		delete lsptreename;
-		lsptreename = NULL;
+	else {
+		HTS_Engine_initialize(&engine, 2);
 	}
-	if (lspwinfn1 != NULL)
-	{
-		delete lspwinfn1;
-		lspwinfn1 = NULL;
+
+	/* load duration model */
+	printf("fn_ts_dur=%s\t", fn_ts_dur[0]);
+	HTS_Engine_load_duration_from_fn(&engine, fn_ms_dur, fn_ts_dur, num_interp);
+	/* load stream[0] (spectrum model) */
+	HTS_Engine_load_parameter_from_fn(&engine, fn_ms_mgc, fn_ts_mgc, fn_ws_mgc,
+		0, FALSE, num_ws_mgc, num_interp);
+	/* load stream[1] (lf0 model) */
+	HTS_Engine_load_parameter_from_fn(&engine, fn_ms_lf0, fn_ts_lf0, fn_ws_lf0,
+		1, TRUE, num_ws_lf0, num_interp);
+	/* load stream[2] (low-pass filter model) */
+	if (num_ms_lpf > 0 || num_ts_lpf > 0)
+		HTS_Engine_load_parameter_from_fn(&engine, fn_ms_lpf, fn_ts_lpf,
+		fn_ws_lpf, 2, FALSE, num_ws_lpf,
+		num_interp);
+	/* load gv[0] (GV for spectrum) */
+	if (num_interp == num_ms_gvm) {
+		if (num_ms_gvm == num_ts_gvm)
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvm, fn_ts_gvm, 0,
+			num_interp);
+		else
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvm, NULL, 0, num_interp);
 	}
-	if (lspwinfn2 != NULL)
-	{
-		delete lspwinfn2;
-		lspwinfn2 = NULL;
+	/* load gv[1] (GV for lf0) */
+	if (num_interp == num_ms_gvl) {
+		if (num_ms_gvl == num_ts_gvl)
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvl, fn_ts_gvl, 1,
+			num_interp);
+		else
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvl, NULL, 1, num_interp);
 	}
-	if (lspwinfn3 != NULL)
-	{
-		delete lspwinfn3;
-		lspwinfn3 = NULL;
+	/* load gv[2] (GV for low-pass filter) */
+	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0)) {
+		if (num_ms_gvf == num_ts_gvf)
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvf, fn_ts_gvf, 0,
+			num_interp);
+		else
+			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvf, NULL, 2, num_interp);
 	}
-	if (lspwinfn != NULL)
-	{
-		delete[]lspwinfn;
-		lspwinfn = NULL;
+	/* load GV switch */
+	if (fn_gv_switch != NULL)
+		HTS_Engine_load_gv_switch_from_fn(&engine, fn_gv_switch);
+
+	/* set parameter */
+	HTS_Engine_set_sampling_rate(&engine, sampling_rate);
+	HTS_Engine_set_fperiod(&engine, fperiod);
+	HTS_Engine_set_alpha(&engine, alpha);
+	HTS_Engine_set_gamma(&engine, stage);
+	HTS_Engine_set_log_gain(&engine, use_log_gain);
+	HTS_Engine_set_beta(&engine, beta);
+	HTS_Engine_set_audio_buff_size(&engine, audio_buff_size);
+	HTS_Engine_set_msd_threshold(&engine, 1, uv_threshold);      /* set voiced/unvoiced threshold for stream[1] */
+	HTS_Engine_set_gv_weight(&engine, 0, gv_weight_mgc);
+	HTS_Engine_set_gv_weight(&engine, 1, gv_weight_lf0);
+	if (num_ms_lpf > 0 || num_ts_lpf > 0)
+		HTS_Engine_set_gv_weight(&engine, 2, gv_weight_lpf);
+	for (i = 0; i < num_interp; i++) {
+		HTS_Engine_set_duration_interpolation_weight(&engine, i, rate_interp[i]);
+		HTS_Engine_set_parameter_interpolation_weight(&engine, 0, i,
+			rate_interp[i]);
+		HTS_Engine_set_parameter_interpolation_weight(&engine, 1, i,
+			rate_interp[i]);
+		if (num_ms_lpf > 0 || num_ts_lpf > 0)
+			HTS_Engine_set_parameter_interpolation_weight(&engine, 2, i,
+			rate_interp[i]);
 	}
+	if (num_interp == num_ms_gvm)
+	for (i = 0; i < num_interp; i++)
+		HTS_Engine_set_gv_interpolation_weight(&engine, 0, i, rate_interp[i]);
+	if (num_interp == num_ms_gvl)
+	for (i = 0; i < num_interp; i++)
+		HTS_Engine_set_gv_interpolation_weight(&engine, 1, i, rate_interp[i]);
+	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0))
+	for (i = 0; i < num_interp; i++)
+		HTS_Engine_set_gv_interpolation_weight(&engine, 2, i, rate_interp[i]);
+
+	
+	/////////////////////////////////////// label.txt /////////////////////////////////////////////
+	// 其他模块初始化 TN 分词 词性标注 韵律标注
+	//韵律词、韵律短语、语调短语模型
+	char *wm = new char[MAX_PATH_SIZE];
+	_snprintf(wm, MAX_PATH_SIZE - 1, "%s/resource/ProsodicWordModel.txt", model_dir);
+	pw = ReadTable(wm);   //韵律词
+
+	char *ppm = new char[MAX_PATH_SIZE];
+	_snprintf(ppm, MAX_PATH_SIZE - 1, "%s/resource/ProsodicPhraseModel.txt", model_dir);
+	pp = ReadTable(ppm);  //韵律短语
+
+	char *ipm = new char[MAX_PATH_SIZE];
+	_snprintf(ipm, MAX_PATH_SIZE - 1, "%s/resource/IntPhraseModel.txt", model_dir);
+	ip = ReadTable(ipm);       //语调短语
+
+	char *dict = new char[MAX_PATH_SIZE];
+	_snprintf(dict, MAX_PATH_SIZE - 1, "%s/resource/dict.txt", model_dir);
+	wt = ReadSTable(dict);   //字典
+
+	char *c2p = new char[MAX_PATH_SIZE];
+	_snprintf(c2p, MAX_PATH_SIZE - 1, "%s/resource/char2pinyin.txt", model_dir);
+	ct = ReadSTable(c2p);  //字音对照表
+
+	TTS_Label_Init(); //初始化Label模块
+
+
+	///////////////////////////////////////  delete  ////////////////////////////////////////////////
+	free(rate_interp);
+	free(fn_ws_mgc);
+	free(fn_ws_lf0);
+	free(fn_ws_lpf);
+	free(fn_ms_mgc);
+	free(fn_ms_lf0);
+	free(fn_ms_lpf);
+	free(fn_ms_dur);
+	free(fn_ts_mgc);
+	free(fn_ts_lf0);
+	free(fn_ts_lpf);
+	free(fn_ts_dur);
+	free(fn_ms_gvm);
+	free(fn_ms_gvl);
+	free(fn_ms_gvf);
+	free(fn_ts_gvm);
+	free(fn_ts_gvl);
+	free(fn_ts_gvf);
+
+	if (fn_ts_dur_tmp){ delete fn_ts_dur_tmp; fn_ts_dur_tmp = NULL; }
+	if (fn_ts_lf0_tmp){ delete fn_ts_lf0_tmp; fn_ts_lf0_tmp = NULL; }
+	if (fn_ts_mgc_tmp){ delete fn_ts_mgc_tmp; fn_ts_mgc_tmp = NULL; }
+	if (fn_ts_lpf_tmp){ delete fn_ts_lpf_tmp; fn_ts_lpf_tmp = NULL; }
+	if (fn_ms_dur_tmp){ delete fn_ms_dur_tmp; fn_ms_dur_tmp = NULL; }
+	if (fn_ms_lf0_tmp){ delete fn_ms_lf0_tmp; fn_ms_lf0_tmp = NULL; }
+	if (fn_ms_mgc_tmp){ delete fn_ms_mgc_tmp; fn_ms_mgc_tmp = NULL; }
+	if (fn_ms_lpf_tmp){ delete fn_ms_lpf_tmp; fn_ms_lpf_tmp = NULL; }
+	if (fn_ws_mgc_tmp_1){ delete fn_ws_mgc_tmp_1; fn_ws_mgc_tmp_1 = NULL; }
+	if (fn_ws_mgc_tmp_2){ delete fn_ws_mgc_tmp_2; fn_ws_mgc_tmp_2 = NULL; }
+	if (fn_ws_mgc_tmp_3){ delete fn_ws_mgc_tmp_3; fn_ws_mgc_tmp_3 = NULL; }
+	if (fn_ws_lf0_tmp_1){ delete fn_ws_lf0_tmp_1; fn_ws_lf0_tmp_1 = NULL; }
+	if (fn_ws_lf0_tmp_2){ delete fn_ws_lf0_tmp_2; fn_ws_lf0_tmp_2 = NULL; }
+	if (fn_ws_lf0_tmp_3){ delete fn_ws_lf0_tmp_3; fn_ws_lf0_tmp_3 = NULL; }
+	if (fn_ws_lpf_tmp){ delete fn_ws_lpf_tmp; fn_ws_lpf_tmp = NULL; }
+	if (fn_ms_gvl_tmp){ delete fn_ms_gvl_tmp; fn_ms_gvl_tmp = NULL; }
+	if (fn_ts_gvl_tmp){ delete fn_ts_gvl_tmp; fn_ts_gvl_tmp = NULL; }
+
+	// 词性 词典 韵律 
+	if (wm){ delete wm; wm = NULL; }
+	if (ppm){ delete ppm; ppm = NULL; }
+	if (ipm){ delete ipm; ipm = NULL; }
+	if (c2p){ delete c2p; c2p = NULL; }
+	if (dict){ delete dict; dict = NULL; }
 	
 
     return 0;
@@ -200,6 +427,19 @@ int TTS::init(const char *model_dir)
 
 int TTS::line2short_array(const char *line, short *out, int out_size)
 {
+	// 输入lab文件名		输出raw		trace
+	char *labfn = NULL, rawfn = NULL, tracefn = NULL;
+	FILE *wavfp = NULL, *rawfp = NULL, *tracefp = NULL;
+
+	// 输入/输出 文件 
+	labfn = "./label.txt";
+	//rawfn = (char *)calloc(1000, sizeof(char));
+	//_snprintf(rawfn, 1000, "%s.raw", labfn);
+	rawfp = Getfp("test.raw", "wb");
+	//tracefn = (char *)calloc(1000, sizeof(char));
+	//_snprintf(tracefn, "%s.trace", labfn);
+	tracefp = Getfp("test.trace", "wt");
+
 
     if(line == NULL || out == NULL || out_size < 1)
     {
@@ -344,36 +584,85 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
     fprintf(fp_log, "\n\n");
 	fflush(fp_log);
 
+	///////////////////////////////  合成  /////////////////////////////////
+	// 合成阶段 
+	double half_tone = 0.0;
+	HTS_Boolean phoneme_alignment = FALSE;
+	double speech_speed = 1.0;
+	double f;
+	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
-   //更新HTS引擎状态
-    HTS_Engine_refresh(engine);
+	/* synthesis */
+	HTS_Engine_refresh(&engine);  // 新加 
 
-    //后端HTS读如label文件。
-    HTS_Engine_load_label_from_fn(engine, "./label.txt");
+	//// load label file   载入label文件 
+ 	HTS_Engine_load_label_from_fn(&engine, labfn);       
+	if (phoneme_alignment)       /* modify label */
+		HTS_Label_set_frame_specified_flag(&engine.label, TRUE);
+	if (speech_speed != 1.0)     /* modify label */
+		HTS_Label_set_speech_speed(&engine.label, speech_speed);
+	
+	//参数规划过程
+	HTS_Engine_create_sstream(&engine);  /* parse label and determine state duration */
+	if (half_tone != 0.0) {      /* modify f0 */
+		for (i = 0; i < HTS_SStreamSet_get_total_state(&engine.sss); i++) {
+			f = HTS_SStreamSet_get_mean(&engine.sss, 1, i, 0);
+			f += half_tone * log(2.0) / 12;
+			if (f < log(10.0))
+				f = log(10.0);
+			HTS_SStreamSet_set_mean(&engine.sss, 1, i, 0, f);
+		}
+	}
+	HTS_Engine_create_pstream(&engine);  /* generate speech parameter vector sequence */
+	HTS_Engine_create_gstream(&engine);  /* synthesize speech */
 
-    //参数规划过程
-    HTS_Engine_create_sstream(engine);
-    HTS_Engine_create_pstream(engine);
+	/* output */
+	if (tracefp != NULL)
+		HTS_Engine_save_information(&engine, tracefp);
+	if (durfp != NULL)
+		HTS_Engine_save_label(&engine, durfp);
+	if (rawfp)
+		HTS_Engine_save_generated_speech(&engine, rawfp);
+	if (wavfp)
+		HTS_Engine_save_riff(&engine, wavfp);
+	if (mgcfp)
+		HTS_Engine_save_generated_parameter(&engine, mgcfp, 0);
+	if (lf0fp)
+		HTS_Engine_save_generated_parameter(&engine, lf0fp, 1);
+	if (lpffp)
+		HTS_Engine_save_generated_parameter(&engine, lpffp, 2);
 
-    for(i=0,msd_frame=0; i<engine->pss.total_frame; i++)
-    {
-        if ( engine->pss.pstream[1].msd_flag[i] )
-        {
-            lf0[i] = engine->pss.pstream[1].par[msd_frame][0];
-            msd_frame++;
-        }
-        else
-        {
-            lf0[i]=0;
-        }
-    }
-
-    //合成过程
-    gen = LPCSynth(engine->pss.pstream[0].par+5, lf0+5,
-        engine->pss.pstream[0].static_length-1, engine->pss.total_frame-5, &len);
 	fprintf(fp_log, "LPCSynth ok!\n");
 	fflush(fp_log);
 
+	/* free */
+	HTS_Engine_refresh(&engine);
+
+	/* free memory */
+	HTS_Engine_clear(&engine);
+
+
+	/* close files */
+	if (durfp != NULL)
+		fclose(durfp);
+	if (mgcfp != NULL)
+		fclose(mgcfp);
+	if (lf0fp != NULL)
+		fclose(lf0fp);
+	if (lpffp != NULL)
+		fclose(lpffp);
+	if (wavfp != NULL)
+		fclose(wavfp);
+	if (rawfp != NULL)
+		fclose(rawfp);
+	if (tracefp != NULL)
+		fclose(tracefp);
+
+
+
+	// 原来的 
+	/*
+ 
     short short0 = 0;
     for(i=0; i<len-456; i++)
     {
@@ -402,13 +691,11 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
         }
 
     }
-	/*
-    free(gen);
-	if (gen != NULL)
-	{
-		free(gen);
-		gen = NULL;
-	}
+	*/
+
+
+	
+
 	if (lf0 != NULL)
 	{
 		free(lf0);
@@ -444,9 +731,8 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	free (wordseq);
 	free(posseq);
 	free(pinyinseq);
-	*/
+	
 
-	return len - 456 + LEN_SIL;
 
 }
 
@@ -501,168 +787,56 @@ int TTS::lines2short_array(const char *lines, short *out, int out_size)
     return size_wav;
 }
 
-int TTS::lines2wav(const char *line, const char *wav_name)
+
+/* Error: output error message */
+void TTS::Error(const int error, char *message, ...)
 {
+	va_list arg;
 
+	fflush(stdout);
+	fflush(stderr);
 
-    int size_wav;
-    short *out = new short[MAX_WAV_SIZE];
-    FILE * fp_wav = fopen(wav_name,"wb"); //二进制写入，用于存储合成的语音
+	if (error > 0)
+		fprintf(stderr, "\nError: ");
+	else
+		fprintf(stderr, "\nWarning: ");
 
-    size_wav = lines2short_array(line, out, MAX_WAV_SIZE);
-    if(size_wav <= 0)
-    {
-        printf("lines2short_array error!\n");
-        return -1;
-    }
+	va_start(arg, message);
+	vfprintf(stderr, message, arg);
+	va_end(arg);
 
-    //printf("wav_size = %d\n",size_wav);
+	fflush(stderr);
 
-    for(int i=0; i<size_wav; i++)
-    {
-
-        fwrite(&out[i], sizeof(short), 1, fp_wav);
-    }
-
-    fclose(fp_wav);
-    delete out;
-
-    return 0;
-
+	if (error > 0)
+		exit(error);
 }
 
-int TTS::line2wav(const char *line, const char *wav_name)
+/* Getfp: wrapper for fopen */
+FILE *TTS::Getfp(const char *name, const char *opt)
 {
+	FILE *fp = fopen(name, opt);
 
+	if (fp == NULL)
+		Error(2, "Getfp: Cannot open %s.\n", name);
 
-    int size_wav;
-    short *out = new short[MAX_WAV_SIZE];
-    FILE * fp_wav = fopen(wav_name,"wb"); //二进制写入，用于存储合成的语音
-
-    size_wav = line2short_array(line, out, MAX_WAV_SIZE);
-    if(size_wav <= 0)
-    {
-        printf("line2short_array error!\n");
-        return -1;
-    }
-
-    //printf("wav_size = %d\n",size_wav);
-
-    for(int i=0; i<size_wav; i++)
-    {
-
-        fwrite(&out[i], sizeof(short), 1, fp_wav);
-    }
-
-    fclose(fp_wav);
-
-    delete out;
-
-    return 0;
-
+	return (fp);
 }
 
-
-int TTS::line2wav_old(const char *line, const char *wav_name)
+/* GetNumInterp: get number of speakers for interpolation from argv */
+int TTS::GetNumInterp(int argc, char **argv_search)
 {
-
-    FILE * fp_wav = fopen(wav_name,"wb"); //二进制写入，用于存储合成的语音
-
-    char tline[1024]={0};
-    _snprintf(tline, 1023, "%s", line);
-    dropReturnTag(tline);
-
-    int len, i, msd_frame, nWord, nChar;
-    short temp;
-    double *gen,*lf0;
-
-    lf0 = (double*)malloc(sizeof(double) * 20000);
-    TtsLabelCharInfo *cif   =   (TtsLabelCharInfo *)malloc(sizeof(TtsLabelCharInfo)*300);
-
-
-    int *pwr,*ppr;
-    short *ptag;
-    char *teof;
-    pwr =   (int *)malloc(sizeof(int)*60);
-    ppr =   (int *)malloc(sizeof(int)*60);
-    ptag=   (short *)malloc(sizeof(short)*60);
-
-    char **wordseq, **posseq, **pinyinseq;
-    wordseq     =   (char**)malloc(sizeof(char *)*150);
-    posseq      =   (char**)malloc(sizeof(char *)*150);
-    pinyinseq   =   (char**)malloc(sizeof(char *)*150);
-    for(i=0; i<150; i++)
-    {
-        wordseq[i]  =   (char *)malloc(sizeof(char)*30);  //单词序列，每一个wordseq[i]存储一个单词
-        posseq[i]   =   (char *)malloc(sizeof(char)*30);   //词性序列
-        pinyinseq[i]=   (char *)malloc(sizeof(char)*30); //字音转换后得到的拼音序列
-    }
-
-
-    TTS_Label_Init(); //初始化Label模块
-
-    nWord = GetWordSegmentAndPosTagger(tline,wordseq,posseq);
-
-    ProsodicWordAnalysis(wordseq, posseq, nWord, pwr, pw);  //韵律词分析
-    ProsodicPhraseAnalysis(wordseq, posseq, nWord, pwr, ppr, pp, ip); //一级、二级韵律短语
-
-    GetProsodicTag(wordseq, nWord, pwr, ppr, ptag);
-    //统一转换格式，生成ptag，ptag数字1，2，3 分别表示韵律词尾，二级韵短尾，一级韵短尾
-    //0表示非韵律词尾
-
-
-    //字音转换
-    Char2Pinyin(wordseq, pinyinseq, nWord, &nChar, wt, ct);
-
-    //根据字音转换信息、韵律信息，生成每个字的完整信息，并写入cif
-    TtsLabel_ObtainLabelCharSeq(cif, pinyinseq, nChar, ptag);
-
-    //打印出标准HTS格式label文件，并写入label.txt
-    PrintLabel(cif, nChar, "./label.txt");
-
-   //更新HTS引擎状态
-    HTS_Engine_refresh(engine);
-
-    //后端HTS读如label文件。
-    HTS_Engine_load_label_from_fn(engine, "./label.txt");
-
-    //参数规划过程
-    HTS_Engine_create_sstream(engine);
-    HTS_Engine_create_pstream(engine);
-
-    for(i=0,msd_frame=0; i<engine->pss.total_frame; i++)
-    {
-        if ( engine->pss.pstream[1].msd_flag[i] )
-        {
-            lf0[i] = engine->pss.pstream[1].par[msd_frame][0];
-            msd_frame++;
-        }
-        else
-        {
-            lf0[i]=0;
-        }
-    }
-
-    //合成过程
-    gen = LPCSynth(engine->pss.pstream[0].par+5, lf0+5,
-        engine->pss.pstream[0].static_length-1, engine->pss.total_frame-5, &len);
-
-    for(i=0; i<len-456; i++)
-    {
-        temp = (short)(gen[i]*32700);
-        fwrite(&temp,sizeof(short),1,fp_wav);
-    }
-
-	for (i = 0; i<LEN_SIL; i++)
-    {
-        fwrite((short)0, sizeof(short), 1, fp_wav);
-    }
-
-    fclose(fp_wav);
-    free(gen);
-    free(lf0);
-
-    return 0;
-
+	int num_interp = 1;
+	while (--argc) {
+		if (**++argv_search == '-') {
+			if (*(*argv_search + 1) == 'i') {
+				num_interp = atoi(*++argv_search);
+				if (num_interp < 1) {
+					num_interp = 1;
+				}
+				--argc;
+			}
+		}
+	}
+	return (num_interp);
 }
 
