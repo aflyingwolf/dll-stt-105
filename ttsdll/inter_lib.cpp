@@ -123,7 +123,6 @@ int TTS::init(const char *model_dir)
 	char *fn_gv_switch = NULL;
 
 	/* global parameter */
-	int sampling_rate = 16000;
 	int fperiod = 80;
 	double alpha = 0.42;
 	int stage = 0;               /* Gamma=-1/stage: if stage=0 then Gamma=0 */
@@ -249,7 +248,7 @@ int TTS::init(const char *model_dir)
 	fn_ts_gvl[num_ts_gvl++] = fn_ts_gvl_tmp; // -ef 
 
 	// 数值 变量 直接赋值
-	sampling_rate = 44100; // -s
+	this->sampling_rate = 44100; // -s
 	fperiod = 220; // -p
 	alpha = 0.55; // -a
 	stage = 0; // -g
@@ -328,7 +327,7 @@ int TTS::init(const char *model_dir)
 		HTS_Engine_load_gv_switch_from_fn(engine, fn_gv_switch);
 
 	/* set parameter */
-	HTS_Engine_set_sampling_rate(engine, sampling_rate);
+	HTS_Engine_set_sampling_rate(engine, this->sampling_rate);
 	HTS_Engine_set_fperiod(engine, fperiod);
 	HTS_Engine_set_alpha(engine, alpha);
 	HTS_Engine_set_gamma(engine, stage);
@@ -599,7 +598,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	// 合成阶段 
 	double half_tone = 0.0;
 	HTS_Boolean phoneme_alignment = FALSE;
-	double speech_speed = 1.0;
+	double speech_speed = 1.2;
 	double f;
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
@@ -630,6 +629,13 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	/* output */
 	// 存储short数组 
 	int len_short = HTS_Engine_speech2short(engine, out, out_size);
+	// 缩短句子间的静音长度
+	int len_del = this->sampling_rate;
+	for (int ii = len_del; ii < len_short; ii++)
+	{
+		out[ii - len_del] = out[ii];
+	}
+	len_short -= len_del;
 
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);

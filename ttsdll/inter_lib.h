@@ -28,10 +28,11 @@ public:
     ~TTS();
 
     int init(const char *model_dir);
-
-
-
     int line2short_array(const char *line, short *out, int out_size);
+
+	// 其他变量 
+	int sampling_rate ;
+
     int lines2short_array(const char *lines, short *out, int out_size);
 
 	/* Error: output error message */
