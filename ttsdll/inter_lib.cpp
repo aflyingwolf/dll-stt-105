@@ -14,7 +14,13 @@
 
 TTS::TTS()
 {
+	if (this->engine != NULL)
+	{
+		delete this->engine;
+		this->engine = NULL;
+	}
 
+	this->engine = (HTS_Engine *)malloc(sizeof(HTS_Engine));
 
 }
 
@@ -25,7 +31,13 @@ TTS::~TTS()
 		fclose(fp_log);
 		fp_log = NULL;
 	}
-
+	if (engine != NULL)
+	{
+		/* free memory */
+		HTS_Engine_clear(engine);
+		free(engine);
+		engine = NULL;
+	}
 
 	if (wt != NULL)
 	{
@@ -58,6 +70,7 @@ TTS::~TTS()
 		delete ip;
 		ip = NULL;
 	}
+
 
 
 }
@@ -124,8 +137,6 @@ int TTS::init(const char *model_dir)
 
 	HTS_Boolean use_log_gain = FALSE;
 
-	/* engine */
-	HTS_Engine engine;
 
 	/* delta window handler for mel-cepstrum */
 	fn_ws_mgc = (char **)calloc(num_argc, sizeof(char *));
@@ -268,86 +279,86 @@ int TTS::init(const char *model_dir)
 
 	/* initialize (stream[0] = spectrum, stream[1] = lf0, stream[2] = low-pass filter) */
 	if (num_ms_lpf > 0 || num_ts_lpf > 0) {
-		HTS_Engine_initialize(&engine, 3);
+		HTS_Engine_initialize(engine, 3);
 	}
 	else {
-		HTS_Engine_initialize(&engine, 2);
+		HTS_Engine_initialize(engine, 2);
 	}
 
 	/* load duration model */
 	printf("fn_ts_dur=%s\t", fn_ts_dur[0]);
-	HTS_Engine_load_duration_from_fn(&engine, fn_ms_dur, fn_ts_dur, num_interp);
+	HTS_Engine_load_duration_from_fn(engine, fn_ms_dur, fn_ts_dur, num_interp);
 	/* load stream[0] (spectrum model) */
-	HTS_Engine_load_parameter_from_fn(&engine, fn_ms_mgc, fn_ts_mgc, fn_ws_mgc,
+	HTS_Engine_load_parameter_from_fn(engine, fn_ms_mgc, fn_ts_mgc, fn_ws_mgc,
 		0, FALSE, num_ws_mgc, num_interp);
 	/* load stream[1] (lf0 model) */
-	HTS_Engine_load_parameter_from_fn(&engine, fn_ms_lf0, fn_ts_lf0, fn_ws_lf0,
+	HTS_Engine_load_parameter_from_fn(engine, fn_ms_lf0, fn_ts_lf0, fn_ws_lf0,
 		1, TRUE, num_ws_lf0, num_interp);
 	/* load stream[2] (low-pass filter model) */
 	if (num_ms_lpf > 0 || num_ts_lpf > 0)
-		HTS_Engine_load_parameter_from_fn(&engine, fn_ms_lpf, fn_ts_lpf,
+		HTS_Engine_load_parameter_from_fn(engine, fn_ms_lpf, fn_ts_lpf,
 		fn_ws_lpf, 2, FALSE, num_ws_lpf,
 		num_interp);
 	/* load gv[0] (GV for spectrum) */
 	if (num_interp == num_ms_gvm) {
 		if (num_ms_gvm == num_ts_gvm)
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvm, fn_ts_gvm, 0,
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvm, fn_ts_gvm, 0,
 			num_interp);
 		else
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvm, NULL, 0, num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvm, NULL, 0, num_interp);
 	}
 	/* load gv[1] (GV for lf0) */
 	if (num_interp == num_ms_gvl) {
 		if (num_ms_gvl == num_ts_gvl)
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvl, fn_ts_gvl, 1,
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvl, fn_ts_gvl, 1,
 			num_interp);
 		else
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvl, NULL, 1, num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvl, NULL, 1, num_interp);
 	}
 	/* load gv[2] (GV for low-pass filter) */
 	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0)) {
 		if (num_ms_gvf == num_ts_gvf)
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvf, fn_ts_gvf, 0,
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvf, fn_ts_gvf, 0,
 			num_interp);
 		else
-			HTS_Engine_load_gv_from_fn(&engine, fn_ms_gvf, NULL, 2, num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvf, NULL, 2, num_interp);
 	}
 	/* load GV switch */
 	if (fn_gv_switch != NULL)
-		HTS_Engine_load_gv_switch_from_fn(&engine, fn_gv_switch);
+		HTS_Engine_load_gv_switch_from_fn(engine, fn_gv_switch);
 
 	/* set parameter */
-	HTS_Engine_set_sampling_rate(&engine, sampling_rate);
-	HTS_Engine_set_fperiod(&engine, fperiod);
-	HTS_Engine_set_alpha(&engine, alpha);
-	HTS_Engine_set_gamma(&engine, stage);
-	HTS_Engine_set_log_gain(&engine, use_log_gain);
-	HTS_Engine_set_beta(&engine, beta);
-	HTS_Engine_set_audio_buff_size(&engine, audio_buff_size);
-	HTS_Engine_set_msd_threshold(&engine, 1, uv_threshold);      /* set voiced/unvoiced threshold for stream[1] */
-	HTS_Engine_set_gv_weight(&engine, 0, gv_weight_mgc);
-	HTS_Engine_set_gv_weight(&engine, 1, gv_weight_lf0);
+	HTS_Engine_set_sampling_rate(engine, sampling_rate);
+	HTS_Engine_set_fperiod(engine, fperiod);
+	HTS_Engine_set_alpha(engine, alpha);
+	HTS_Engine_set_gamma(engine, stage);
+	HTS_Engine_set_log_gain(engine, use_log_gain);
+	HTS_Engine_set_beta(engine, beta);
+	HTS_Engine_set_audio_buff_size(engine, audio_buff_size);
+	HTS_Engine_set_msd_threshold(engine, 1, uv_threshold);      /* set voiced/unvoiced threshold for stream[1] */
+	HTS_Engine_set_gv_weight(engine, 0, gv_weight_mgc);
+	HTS_Engine_set_gv_weight(engine, 1, gv_weight_lf0);
 	if (num_ms_lpf > 0 || num_ts_lpf > 0)
-		HTS_Engine_set_gv_weight(&engine, 2, gv_weight_lpf);
+		HTS_Engine_set_gv_weight(engine, 2, gv_weight_lpf);
 	for (i = 0; i < num_interp; i++) {
-		HTS_Engine_set_duration_interpolation_weight(&engine, i, rate_interp[i]);
-		HTS_Engine_set_parameter_interpolation_weight(&engine, 0, i,
+		HTS_Engine_set_duration_interpolation_weight(engine, i, rate_interp[i]);
+		HTS_Engine_set_parameter_interpolation_weight(engine, 0, i,
 			rate_interp[i]);
-		HTS_Engine_set_parameter_interpolation_weight(&engine, 1, i,
+		HTS_Engine_set_parameter_interpolation_weight(engine, 1, i,
 			rate_interp[i]);
 		if (num_ms_lpf > 0 || num_ts_lpf > 0)
-			HTS_Engine_set_parameter_interpolation_weight(&engine, 2, i,
+			HTS_Engine_set_parameter_interpolation_weight(engine, 2, i,
 			rate_interp[i]);
 	}
 	if (num_interp == num_ms_gvm)
 	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(&engine, 0, i, rate_interp[i]);
+		HTS_Engine_set_gv_interpolation_weight(engine, 0, i, rate_interp[i]);
 	if (num_interp == num_ms_gvl)
 	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(&engine, 1, i, rate_interp[i]);
+		HTS_Engine_set_gv_interpolation_weight(engine, 1, i, rate_interp[i]);
 	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0))
 	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(&engine, 2, i, rate_interp[i]);
+		HTS_Engine_set_gv_interpolation_weight(engine, 2, i, rate_interp[i]);
 
 	
 	/////////////////////////////////////// label.txt /////////////////////////////////////////////
@@ -593,53 +604,52 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
 	/* synthesis */
-	HTS_Engine_refresh(&engine);  // 新加 
+	HTS_Engine_refresh(engine);  // 新加 
 
 	//// load label file   载入label文件 
- 	HTS_Engine_load_label_from_fn(&engine, labfn);       
+ 	HTS_Engine_load_label_from_fn(engine, labfn);       
 	if (phoneme_alignment)       /* modify label */
-		HTS_Label_set_frame_specified_flag(&engine.label, TRUE);
+		HTS_Label_set_frame_specified_flag(&(engine->label), TRUE);
 	if (speech_speed != 1.0)     /* modify label */
-		HTS_Label_set_speech_speed(&engine.label, speech_speed);
+		HTS_Label_set_speech_speed(&(engine->label), speech_speed);
 	
 	//参数规划过程
-	HTS_Engine_create_sstream(&engine);  /* parse label and determine state duration */
+	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
 	if (half_tone != 0.0) {      /* modify f0 */
-		for (i = 0; i < HTS_SStreamSet_get_total_state(&engine.sss); i++) {
-			f = HTS_SStreamSet_get_mean(&engine.sss, 1, i, 0);
+		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) {
+			f = HTS_SStreamSet_get_mean(&(engine->sss), 1, i, 0);
 			f += half_tone * log(2.0) / 12;
 			if (f < log(10.0))
 				f = log(10.0);
-			HTS_SStreamSet_set_mean(&engine.sss, 1, i, 0, f);
+			HTS_SStreamSet_set_mean(&(engine->sss), 1, i, 0, f);
 		}
 	}
-	HTS_Engine_create_pstream(&engine);  /* generate speech parameter vector sequence */
-	HTS_Engine_create_gstream(&engine);  /* synthesize speech */
+	HTS_Engine_create_pstream(engine);  /* generate speech parameter vector sequence */
+	HTS_Engine_create_gstream(engine);  /* synthesize speech */
 
 	/* output */
 	if (tracefp != NULL)
-		HTS_Engine_save_information(&engine, tracefp);
+		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
-		HTS_Engine_save_label(&engine, durfp);
+		HTS_Engine_save_label(engine, durfp);
 	if (rawfp)
-		HTS_Engine_save_generated_speech(&engine, rawfp);
+		HTS_Engine_save_generated_speech(engine, rawfp);
 	if (wavfp)
-		HTS_Engine_save_riff(&engine, wavfp);
+		HTS_Engine_save_riff(engine, wavfp);
 	if (mgcfp)
-		HTS_Engine_save_generated_parameter(&engine, mgcfp, 0);
+		HTS_Engine_save_generated_parameter(engine, mgcfp, 0);
 	if (lf0fp)
-		HTS_Engine_save_generated_parameter(&engine, lf0fp, 1);
+		HTS_Engine_save_generated_parameter(engine, lf0fp, 1);
 	if (lpffp)
-		HTS_Engine_save_generated_parameter(&engine, lpffp, 2);
+		HTS_Engine_save_generated_parameter(engine, lpffp, 2);
 
 	fprintf(fp_log, "LPCSynth ok!\n");
 	fflush(fp_log);
 
 	/* free */
-	HTS_Engine_refresh(&engine);
+	HTS_Engine_refresh(engine);
 
-	/* free memory */
-	HTS_Engine_clear(&engine);
+
 
 
 	/* close files */

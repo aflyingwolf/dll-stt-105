@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <math.h>
 
-#include "HTS_engine.h"
 
 #ifdef  MYLIBDLL
 #define MYLIBDLL extern "C" _declspec(dllimport)
@@ -19,6 +18,10 @@
 const int MAX_WAV_SIZE = 100000000;
 const int MAX_PATH_SIZE = 1000;
 const int LEN_SIL = 300;
+
+struct   HTS_Engine;
+struct STable;
+struct Table ;
 
 
 class __declspec(dllexport) TTS
