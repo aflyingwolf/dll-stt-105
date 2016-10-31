@@ -628,6 +628,9 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	HTS_Engine_create_gstream(engine);  /* synthesize speech */
 
 	/* output */
+	// ´æ´¢shortÊý×é 
+	int len_short = HTS_Engine_speech2short(engine, out, out_size);
+
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
@@ -742,7 +745,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	free(posseq);
 	free(pinyinseq);
 	
-
+	return len_short;
 
 }
 
@@ -769,7 +772,7 @@ int TTS::lines2short_array(const char *lines, short *out, int out_size)
         size_tmp = line2short_array(line.c_str(), p_out, MAX_WAV_SIZE-size_wav);
         if(size_tmp < 0)
         {
-            printf("line2short_array error!\n");\
+            printf("line2short_array error!\n");
             return -1;
         }
         size_wav += size_tmp;
@@ -827,8 +830,10 @@ FILE *TTS::Getfp(const char *name, const char *opt)
 	FILE *fp = fopen(name, opt);
 
 	if (fp == NULL)
-		Error(2, "Getfp: Cannot open %s.\n", name);
-
+	{
+		return NULL;
+	//	Error(2, "Getfp: Cannot open %s.\n", name);
+	}
 	return (fp);
 }
 

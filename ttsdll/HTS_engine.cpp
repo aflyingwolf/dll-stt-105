@@ -736,6 +736,25 @@ void HTS_Engine_save_generated_speech(HTS_Engine * engine, FILE * fp)
    }
 }
 
+
+int HTS_Engine_speech2short(HTS_Engine * engine, short *out_short, int len)
+{
+	int i=0;
+	short temp;
+	HTS_GStreamSet *gss = &engine->gss;
+
+	for (i = 0; i < HTS_GStreamSet_get_total_nsample(gss); i++) {
+		temp = HTS_GStreamSet_get_speech(gss, i);
+		//fwrite(&temp, sizeof(short), 1, fp);
+		if (i>len)
+		{
+			return -1;
+		}
+		out_short[i] = temp;
+	}
+	return i;
+}
+
 /* HTS_Engine_save_riff: output RIFF format file */
 void HTS_Engine_save_riff(HTS_Engine * engine, FILE * fp)
 {

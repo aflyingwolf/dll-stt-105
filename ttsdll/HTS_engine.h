@@ -840,6 +840,8 @@ void HTS_Engine_save_generated_parameter(HTS_Engine * engine, FILE * fp,
 
 /* HTS_Engine_save_generated_speech: output generated speech */
 void HTS_Engine_save_generated_speech(HTS_Engine * engine, FILE * fp);
+/* 把生成的short* 存储到数组中 返回值为short数组长度*/
+int HTS_Engine_speech2short(HTS_Engine * engine, short *out_short, int len);
 
 /* HTS_Engine_save_riff: output RIFF format file */
 void HTS_Engine_save_riff(HTS_Engine * engine, FILE * wavfp);
