@@ -597,8 +597,8 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	///////////////////////////////  合成  /////////////////////////////////
 	// 合成阶段 
 	double half_tone = 0.0;
-	HTS_Boolean phoneme_alignment = FALSE;
-	double speech_speed = 1.2;
+	HTS_Boolean phoneme_alignment = TRUE;//FALSE;  // mod-szm
+	double speech_speed = 1.0;
 	double f;
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
@@ -614,7 +614,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	
 	//参数规划过程
 	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
-	if (half_tone != 0.0) {      /* modify f0 */
+	if (half_tone > 0.01) {      /* modify f0 mod-szm !=0.0*/
 		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) {
 			f = HTS_SStreamSet_get_mean(&(engine->sss), 1, i, 0);
 			f += half_tone * log(2.0) / 12;
@@ -629,14 +629,15 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	/* output */
 	// 存储short数组 
 	int len_short = HTS_Engine_speech2short(engine, out, out_size);
-	// 缩短句子间的静音长度
-	int len_del = this->sampling_rate;
+	// 缩短句子间的静音长度  前后各减掉1秒钟 
+	int len_del = this->sampling_rate * 0.05;
+	/*
 	for (int ii = len_del; ii < len_short; ii++)
 	{
 		out[ii - len_del] = out[ii];
 	}
-	len_short -= len_del;
-
+	len_short -= 2*len_del;
+	*/
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
