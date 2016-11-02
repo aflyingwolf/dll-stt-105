@@ -128,8 +128,8 @@ int TTS::init(const char *model_dir)
 	int stage = 0;               /* Gamma=-1/stage: if stage=0 then Gamma=0 */
 	double beta = 0.0;
 
-	//int audio_buff_size = 1600; // ori-105
-	int audio_buff_size = 16000; // mod-szm  
+	int audio_buff_size = 1600; // ori-105
+	//int audio_buff_size = 16000; // mod-szm  
 
 
 	double uv_threshold = 0.5;  // 设置msd概率 =lc
@@ -259,9 +259,9 @@ int TTS::init(const char *model_dir)
 	alpha = 0.55; // -a
 	stage = 0; // -g
 
-	// 是否使用对数增益 mod-szm
+	// 是否使用对数增益
 	use_log_gain = TRUE; // ori-105
-	//use_log_gain = FALSE; // -l
+	//use_log_gain = FALSE; // mod-szm
 	beta = 0.4; // -b 
 	beta = 0.0; // -b ?  
 
@@ -610,7 +610,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	// 合成阶段 
 	double half_tone = 0.0;
 
-	// mod-szm
+
 	HTS_Boolean phoneme_alignment = FALSE; // ori-105
 	//HTS_Boolean phoneme_alignment = TRUE;// mod-szm  
 	double speech_speed = 1.0;
@@ -629,10 +629,13 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	
 	//参数规划过程
 	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
+	
 	// modify f0 
-	// mod-szm 原来ori-105： half_tone != 0.0 
-	if (half_tone > 0.01) {      
-		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) {
+	//if (half_tone > 0.01) // mod-szm
+	if (half_tone != 0.0) // ori-105
+	{      
+		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) 
+		{
 			f = HTS_SStreamSet_get_mean(&(engine->sss), 1, i, 0);
 			f += half_tone * log(2.0) / 12;
 			if (f < log(10.0))
