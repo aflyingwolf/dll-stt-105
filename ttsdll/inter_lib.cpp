@@ -127,8 +127,12 @@ int TTS::init(const char *model_dir)
 	double alpha = 0.42;
 	int stage = 0;               /* Gamma=-1/stage: if stage=0 then Gamma=0 */
 	double beta = 0.0;
-	int audio_buff_size = 1600;
-	double uv_threshold = 0.5;
+
+	//int audio_buff_size = 1600; // ori-105
+	int audio_buff_size = 16000; // mod-szm  
+
+
+	double uv_threshold = 0.5;  // 设置msd概率 =lc
 	double gv_weight_mgc = 1.0;
 	double gv_weight_lf0 = 1.0;
 	double gv_weight_lpf = 1.0;
@@ -249,10 +253,15 @@ int TTS::init(const char *model_dir)
 
 	// 数值 变量 直接赋值
 	this->sampling_rate = 44100; // -s
+
+	// 帧移 16k对应80   1/200=5毫秒? 
 	fperiod = 220; // -p
 	alpha = 0.55; // -a
 	stage = 0; // -g
-	use_log_gain = TRUE; // -l
+
+	// 是否使用对数增益 mod-szm
+	use_log_gain = TRUE; // ori-105
+	//use_log_gain = FALSE; // -l
 	beta = 0.4; // -b 
 	beta = 0.0; // -b ?  
 
@@ -296,8 +305,8 @@ int TTS::init(const char *model_dir)
 	/* load stream[2] (low-pass filter model) */
 	if (num_ms_lpf > 0 || num_ts_lpf > 0)
 		HTS_Engine_load_parameter_from_fn(engine, fn_ms_lpf, fn_ts_lpf,
-		fn_ws_lpf, 2, FALSE, num_ws_lpf,
-		num_interp);
+		fn_ws_lpf, 2, FALSE, num_ws_lpf,num_interp);
+
 	/* load gv[0] (GV for spectrum) */
 	if (num_interp == num_ms_gvm) {
 		if (num_ms_gvm == num_ts_gvm)
@@ -334,7 +343,10 @@ int TTS::init(const char *model_dir)
 	HTS_Engine_set_log_gain(engine, use_log_gain);
 	HTS_Engine_set_beta(engine, beta);
 	HTS_Engine_set_audio_buff_size(engine, audio_buff_size);
-	HTS_Engine_set_msd_threshold(engine, 1, uv_threshold);      /* set voiced/unvoiced threshold for stream[1] */
+
+	/* set voiced/unvoiced threshold for stream[1] */
+	// 设置msd概率 
+	HTS_Engine_set_msd_threshold(engine, 1, uv_threshold);      
 	HTS_Engine_set_gv_weight(engine, 0, gv_weight_mgc);
 	HTS_Engine_set_gv_weight(engine, 1, gv_weight_lf0);
 	if (num_ms_lpf > 0 || num_ts_lpf > 0)
@@ -597,7 +609,10 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	///////////////////////////////  合成  /////////////////////////////////
 	// 合成阶段 
 	double half_tone = 0.0;
-	HTS_Boolean phoneme_alignment = TRUE;//FALSE;  // mod-szm
+
+	// mod-szm
+	HTS_Boolean phoneme_alignment = FALSE; // ori-105
+	//HTS_Boolean phoneme_alignment = TRUE;// mod-szm  
 	double speech_speed = 1.0;
 	double f;
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
@@ -614,7 +629,9 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	
 	//参数规划过程
 	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
-	if (half_tone > 0.01) {      /* modify f0 mod-szm !=0.0*/
+	// modify f0 
+	// mod-szm 原来ori-105： half_tone != 0.0 
+	if (half_tone > 0.01) {      
 		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) {
 			f = HTS_SStreamSet_get_mean(&(engine->sss), 1, i, 0);
 			f += half_tone * log(2.0) / 12;
