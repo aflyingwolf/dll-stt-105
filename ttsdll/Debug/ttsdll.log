@@ -1,0 +1,66 @@
+﻿生成启动时间为 2016/10/31 18:10:15。
+     1>项目“D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\ttsdll.vcxproj”在节点 2 上(Rebuild 个目标)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files (x86)\Visual Leak Detector\include" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TTSDLL_EXPORTS /D _CRT_SECURE_NO_WARNINGS /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Char2Pinyin.cpp getLabel.cpp HTS_audio.cpp HTS_engine.cpp HTS_gstream.cpp HTS_label.cpp HTS_misc.cpp HTS_model.cpp HTS_pstream.cpp HTS_sstream.cpp HTS_vocoder.cpp inter_lib.cpp ProsodicAnalysis.cpp str_fun.cpp Table.cpp Vocoder.cpp
+         Vocoder.cpp
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\vocoder.cpp(1845): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\vocoder.cpp(1888): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\vocoder.cpp(1839): warning C4101: “pbuff”: 未引用的局部变量
+         Table.cpp
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\table.cpp(19): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\table.cpp(25): warning C4018: “<”: 有符号/无符号不匹配
+         str_fun.cpp
+         ProsodicAnalysis.cpp
+         inter_lib.cpp
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(633): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(471): warning C4101: “msd_frame”: 未引用的局部变量
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(481): warning C4101: “teof”: 未引用的局部变量
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(472): warning C4101: “temp”: 未引用的局部变量
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(471): warning C4101: “len”: 未引用的局部变量
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\inter_lib.cpp(473): warning C4101: “gen”: 未引用的局部变量
+         HTS_vocoder.cpp
+         HTS_sstream.cpp
+         HTS_pstream.cpp
+         HTS_model.cpp
+         HTS_misc.cpp
+         HTS_label.cpp
+         HTS_gstream.cpp
+         HTS_engine.cpp
+         HTS_audio.cpp
+         getLabel.cpp
+         Char2Pinyin.cpp
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(359): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(362): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(379): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(381): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(333): warning C4101: “vec_len”: 未引用的局部变量
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(441): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\char2pinyin.cpp(443): warning C4018: “<”: 有符号/无符号不匹配
+         正在生成代码...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.dll" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files (x86)\Visual Leak Detector\lib\Win32" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.lib" /MACHINE:X86 /DLL Debug\Char2Pinyin.obj
+         Debug\getLabel.obj
+         Debug\HTS_audio.obj
+         Debug\HTS_engine.obj
+         Debug\HTS_gstream.obj
+         Debug\HTS_label.obj
+         Debug\HTS_misc.obj
+         Debug\HTS_model.obj
+         Debug\HTS_pstream.obj
+         Debug\HTS_sstream.obj
+         Debug\HTS_vocoder.obj
+         Debug\inter_lib.obj
+         Debug\ProsodicAnalysis.obj
+         Debug\str_fun.obj
+         Debug\Table.obj
+         Debug\Vocoder.obj
+            正在创建库 D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.lib 和对象 D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.exp
+     1>Char2Pinyin.obj : error LNK2019: 无法解析的外部符号 __CrtDbgReportW，该符号在函数 "public: class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > & __thiscall std::vector<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,class std::allocator<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > > >::operator[](unsigned int)" (??A?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAEAAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@I@Z) 中被引用
+     1>inter_lib.obj : error LNK2001: 无法解析的外部符号 __CrtDbgReportW
+     1>libcpmtd.lib(stdthrow.obj) : error LNK2001: 无法解析的外部符号 __CrtDbgReportW
+     1>D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\Debug\ttsdll.dll : fatal error LNK1120: 1 个无法解析的外部命令
+     1>已完成生成项目“D:\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\ttsdll.vcxproj”(Rebuild 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:10.06

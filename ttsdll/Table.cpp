@@ -39,10 +39,15 @@ int Split(char *str,char **words,int *nWords){
     return n;
 }
 
+/*
+	从tab中查找 key特征的值  没有返回0 
+*/
 double GetTableValue(Table *tab,char * key){
     int i;
-    for(i=0;i<tab->nNodes;i++){
-        if(strcmp(key,tab->tn[i].key)==0){
+    for(i=0;i<tab->nNodes;i++)
+	{
+        if(strcmp(key,tab->tn[i].key)==0)
+		{
             return tab->tn[i].val;
         }
     }
