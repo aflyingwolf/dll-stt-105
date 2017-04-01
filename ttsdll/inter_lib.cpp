@@ -449,6 +449,10 @@ int TTS::init(const char *model_dir)
 
 int TTS::line2short_array(const char *line, short *out, int out_size)
 {
+	int NUM_WORD = 200; // 去掉原来 ptag 中的60
+	int NUM_SEQ = 500; // 代替原来的 150 
+	int NUM_LEN = 1000; // 代替原来的 300
+
 	// 输入lab文件名		输出raw		trace
 	char *labfn = NULL, rawfn = NULL, tracefn = NULL;
 	FILE *wavfp = NULL, *rawfp = NULL, *tracefp = NULL;
@@ -485,25 +489,25 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
     double *gen, *lf0;
 
     lf0 = (double*)malloc(sizeof(double) * 20000);
-    TtsLabelCharInfo *cif   =   (TtsLabelCharInfo *)malloc(sizeof(TtsLabelCharInfo)*300);
+	TtsLabelCharInfo *cif = (TtsLabelCharInfo *)malloc(sizeof(TtsLabelCharInfo)*NUM_LEN);
 
 
     int *pwr,*ppr;
     short *ptag;
     char *teof;
-    pwr =   (int *)malloc(sizeof(int)*60);
-    ppr =   (int *)malloc(sizeof(int)*60);
-    ptag=   (short *)malloc(sizeof(short)*60);
+    pwr =   (int *)malloc(sizeof(int)* NUM_WORD);
+    ppr =   (int *)malloc(sizeof(int)* NUM_WORD);
+    ptag=   (short *)malloc(sizeof(short)* NUM_WORD);
 
     char **wordseq, **posseq, **pinyinseq;
-    wordseq     =   (char**)malloc(sizeof(char *)*150);
-    posseq      =   (char**)malloc(sizeof(char *)*150);
-    pinyinseq   =   (char**)malloc(sizeof(char *)*150);
-    for(i=0; i<150; i++)
+	wordseq = (char**)malloc(sizeof(char *)* NUM_SEQ);
+	posseq = (char**)malloc(sizeof(char *)*NUM_SEQ);
+	pinyinseq = (char**)malloc(sizeof(char *)*NUM_SEQ);
+	for (i = 0; i<NUM_SEQ; i++)
     {
-        wordseq[i]  =   (char *)malloc(sizeof(char)*300);  //单词序列，每一个wordseq[i]存储一个单词
-        posseq[i]   =   (char *)malloc(sizeof(char)*300);   //词性序列
-        pinyinseq[i]=   (char *)malloc(sizeof(char)*300); //字音转换后得到的拼音序列
+		wordseq[i] = (char *)malloc(sizeof(char)* NUM_LEN);  //单词序列，每一个wordseq[i]存储一个单词
+		posseq[i] = (char *)malloc(sizeof(char)*NUM_LEN);   //词性序列
+		pinyinseq[i] = (char *)malloc(sizeof(char)*NUM_LEN); //字音转换后得到的拼音序列
     }
 
 
@@ -650,14 +654,14 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	// 存储short数组 
 	int len_short = HTS_Engine_speech2short(engine, out, out_size);
 	// 缩短句子间的静音长度  前后各减掉1秒钟 
-	int len_del = this->sampling_rate * 0.05;
-	/*
+	int len_del = this->sampling_rate * 0.5;
+	
 	for (int ii = len_del; ii < len_short; ii++)
 	{
 		out[ii - len_del] = out[ii];
 	}
 	len_short -= 2*len_del;
-	*/
+	
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
@@ -762,7 +766,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 		free(ptag);
 		ptag = NULL;
 	}
-	for (i = 0; i<150; i++)
+	for (i = 0; i<NUM_SEQ; i++)
 	{
 		free(wordseq[i]); 
 		free(posseq[i]);
