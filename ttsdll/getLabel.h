@@ -34,8 +34,21 @@ typedef struct _TtsLabelCharInfo{
     short IpInSentNum;
 }TtsLabelCharInfo;
 
+/*
+二分查找数组中的 pinyin 对应的索引
+*/
 short getPinyinInfoID(char *pinyin);
+
+/*
+获取这个pinyin对应的：声母 韵母 音调
+*/
 void getShengYun(char *pinyin,char *shengmu,char *yunmu,short *yindiao);
+
+/*
+char **pinyinSeq: sNum 个拼音
+short *tag :	   sNum 个pos标记(01234)
+最后得到label序列需要的信息 存储在 cif中
+*/
 void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short sNum,short * tag);
 void TTS_Label_Init();
 void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname);

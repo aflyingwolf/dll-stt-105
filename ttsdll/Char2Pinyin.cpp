@@ -156,6 +156,9 @@ void Char2Pinyin(char **wordseq, char **pinyinseq, int nword, int *npinyin, STab
     Split(buf, pinyinseq, npinyin);
 }
 
+/*
+	// 从输入的汉子字符串(GBK)中获取每个字。
+*/
 int get_word(const char *word_seq, std::vector<std::string> &vec_word)
 {
 	char word_temp[MAX_PY_LEN] = { 0 };
@@ -222,6 +225,7 @@ int get_py_vec(const char *input_py, std::vector<std::string> &vec_py)
 	}
 	return 0;
 }
+
 /*
 // nChar 个pinyin和ptag    150个长300
 //word_seq: 汶川的这次大地震是一次浅源地震
@@ -262,7 +266,7 @@ int py_bd(const char *word_seq, char **py_sq, short *ptag, int nChar)
 
 		if (ptag[ii] != 0)   //  当前不是 0 
 		{
-			if (flag_0 == 0) // 前面没有聚集0，当然为第一个字符
+			if (flag_0 == 0) // 前面没有0，当然为第一个字符
 			{
 				left_ii = ii;
 			}

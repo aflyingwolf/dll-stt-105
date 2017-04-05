@@ -515,31 +515,39 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	fprintf(fp_log, "TTS_Label_Init ok!\n");
 	fflush(fp_log);
 
+	//从分词/词性结果的string中: 中华/a 人民/b 共和国/c
+	//提取出 word序列 和 对应的pos序列	
     nWord = GetWordSegmentAndPosTagger(tline,wordseq,posseq);
 	fprintf(fp_log, "GetWordSegmentAndPosTagger ok!\n");
-	fprintf(fp_log, "\nnWord=%d\n", nWord);
+	fprintf(fp_log, "nWord=%d\n", nWord);
+
 	for (i = 0; i<nWord; i++)
 	{
 		fprintf(fp_log, "%s/%s ", wordseq[i], posseq[i]);
 	}
 	fflush(fp_log);
 
-    ProsodicWordAnalysis(wordseq, posseq, nWord, pwr, pw);  //韵律词分析    得到pwr
-    ProsodicPhraseAnalysis(wordseq, posseq, nWord, pwr, ppr, pp, ip); //一级、二级韵律短语   得到ppr
+	//韵律词分析    得到pwr
+    ProsodicWordAnalysis(wordseq, posseq, nWord, pwr, pw);  
+    
+	//一级、二级韵律短语   得到ppr
+	ProsodicPhraseAnalysis(wordseq, posseq, nWord, pwr, ppr, pp, ip); 
 
-    GetProsodicTag(wordseq, nWord, pwr, ppr, ptag);     // 通过 pwr和ppr 得到每个pinyin对应的ptag值
-    //统一转换格式，生成ptag，ptag数字1，2，3 分别表示韵律词尾，二级韵短尾，一级韵短尾 0表示非韵律词尾
+	// 通过 pwr和ppr 得到每个pinyin对应的ptag值
+	//统一转换格式，生成ptag，ptag数字1，2，3 分别表示韵律词尾，二级韵短尾，一级韵短尾 0表示非韵律词尾
+    GetProsodicTag(wordseq, nWord, pwr, ppr, ptag);     
+    
 	fprintf(fp_log, "GetProsodicTag ok!\n");
 	fflush(fp_log);
 
-    //字音转换
+    //字音转换  nChar 是字的个数  nWord是词个数 拼音是跟字对应的 
     Char2Pinyin(wordseq, pinyinseq, nWord, &nChar, wt, ct);
 	fprintf(fp_log, "Char2Pinyin ok!\n");
 	fprintf(fp_log, "\nnChar=%d\n", nChar);
 	for (i = 0; i<nChar; i++)
 	{
-		fprintf(fp_log, "pinyinseq[%d]:%s\t", i, pinyinseq[i]);
-		fprintf(fp_log, "ptag[%d]     :%d\n", i, ptag[i]);
+		fprintf(fp_log, "pinyinseq[%d]=%s\t", i, pinyinseq[i]);
+		fprintf(fp_log, "ptag[%d]=%d\n", i, ptag[i]);
 
 	}
 	fflush(fp_log);
@@ -558,34 +566,37 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	}
 	*/
 
-	char word_seq_temp[1000] = { 0 };
-	for (i = 0; i < nWord; i++)
-	{
-		strcat(word_seq_temp, wordseq[i]);
-	}
+	//// 三三变调  一不变调 
+	//// bug1: 移除去哪网   "移 除去  哪 网" 中的 "哪网"
+	//char word_seq_temp[1000] = { 0 };
+	//for (i = 0; i < nWord; i++)
+	//{
+	//	strcat(word_seq_temp, wordseq[i]);
+	//}
+	//
+	//ret = py_bd(word_seq_temp, pinyinseq, ptag, nChar);
+	//if (ret < 0)
+	//{	
+	//	fprintf(fp_log, "py_bd error!!!!!!! ret %d\n",ret);
+	//	fflush(fp_log);
+	//}
+	//
+	//fprintf(fp_log, "py_bd is over !\n");
+	//fprintf(fp_log, "\nnChar=%d\n", nChar);
+	//for (i = 0; i<nChar; i++)
+	//{
+	//	fprintf(fp_log, "pinyinseq[%d]=%s\t", i, pinyinseq[i]);
+	//	fprintf(fp_log, "ptag[%d]=%d\n", i, ptag[i]);	
+	//	
+	//}
+	//fflush(fp_log);
 
-	ret = py_bd(word_seq_temp, pinyinseq, ptag, nChar);
-	if (ret < 0)
-	{	
-		fprintf(fp_log, "py_bd error!!!!!!! ret %d\n",ret);
-		fflush(fp_log);
-	}
-
-	fprintf(fp_log, "py_bd is over !\n");
-	fprintf(fp_log, "\nnChar=%d\n", nChar);
-	for (i = 0; i<nChar; i++)
-	{
-		fprintf(fp_log, "pinyinseq[%d]:%s\t", i, pinyinseq[i]);
-		fprintf(fp_log, "ptag[%d]     :%d\n", i, ptag[i]);	
-		
-	}
-	fflush(fp_log);
-
+	// 使用每个字的pinyin + ptag(韵律标记)   获取 label序列的信息 
     TtsLabel_ObtainLabelCharSeq(cif, pinyinseq, nChar, ptag);
 	fprintf(fp_log, "TtsLabel_ObtainLabelCharSeq ok!\n");
 	fflush(fp_log);
 
-    //打印出标准HTS格式label文件，并写入label.txt
+    //打印出标准HTS格式label文件，并写入label.txt  Windows CR LF 行尾 ? 
     PrintLabel(cif, nChar, "./label.txt");
 	fprintf(fp_log, "PrintLabel ok!\n");
 	fflush(fp_log);
@@ -598,11 +609,12 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
         {
             fprintf(fp_log, "|");
         }
-        if(ppr[i]==2)
+        else if(ppr[i]==2)
         {
             fprintf(fp_log,"$");
         }
-            else if(pwr[i]==1){
+        else if(pwr[i]==1)
+		{
                 fprintf(fp_log, " ");
         }
         fflush(fp_log);
@@ -625,18 +637,21 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	HTS_Engine_refresh(engine);  // 新加 
 
 	//// load label file   载入label文件 
- 	HTS_Engine_load_label_from_fn(engine, labfn);       
+ 	HTS_Engine_load_label_from_fn(engine, labfn);  
+
 	if (phoneme_alignment)       /* modify label */
 		HTS_Label_set_frame_specified_flag(&(engine->label), TRUE);
-	if (speech_speed != 1.0)     /* modify label */
+	
+	//if (speech_speed != 1.0)     // modify label  ori-105
+	if (abs(speech_speed-1.0) > 1e-6)     // modify label mod-szm 
 		HTS_Label_set_speech_speed(&(engine->label), speech_speed);
 	
 	//参数规划过程
 	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
 	
 	// modify f0 
-	//if (half_tone > 0.01) // mod-szm
-	if (half_tone != 0.0) // ori-105
+	if (abs(half_tone) > 1e-6) // mod-szm
+	//if (half_tone != 0.0) // ori-105
 	{      
 		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) 
 		{

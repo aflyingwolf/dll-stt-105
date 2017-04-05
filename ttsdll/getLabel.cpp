@@ -5,10 +5,15 @@
 
 PinyinInfo pinyin2phone[411];
 
-short getPinyinInfoID(char *pinyin){
+/*
+	二分查找数组中的 pinyin 对应的索引 
+*/
+short getPinyinInfoID(char *pinyin)
+{
     short l=0,u=411;
     short m,comp;
-    while(u-l>=2){
+    while(u-l>=2)
+	{
         m=(u+l)/2;
         comp=strcmp(pinyin,pinyin2phone[m].pinyin);
         if(comp==0){return m;}
@@ -24,30 +29,44 @@ short getPinyinInfoID(char *pinyin){
     return -1;
 }
 
-
-void getShengYun(char *pinyin,char *shengmu,char *yunmu,short *yindiao){
+/*
+	获取这个pinyin对应的：声母 韵母 音调 
+	pinyin 的最后一位就是yindiao 
+*/
+void getShengYun(char *pinyin,char *shengmu,char *yunmu,short *yindiao)
+{
     PinyinInfo *pif;//
     char py[9];
     int len=strlen(pinyin);
     int pyID;
+
     if(pinyin[len-1]=='1'){*yindiao=1;}
     if(pinyin[len-1]=='2'){*yindiao=2;}
     if(pinyin[len-1]=='3'){*yindiao=3;}
     if(pinyin[len-1]=='4'){*yindiao=4;}
     if(pinyin[len-1]=='5'){*yindiao=5;}
+
     strcpy(py,pinyin);
     py[len-1]=0;
-    pyID=getPinyinInfoID(py);
-    pif=pinyin2phone+pyID;
-    if(pyID<0){
+
+
+    pyID = getPinyinInfoID(py);
+    pif = pinyin2phone+pyID;
+    if(pyID<0)
+	{
         printf("warning: pinyin %s does not exist!\n",py);
     }
     strcpy(shengmu,pif->shengmu);
     strcpy(yunmu,pif->yunmu);
 };
 
-
-void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short sNum,short * tag){
+/*
+	char **pinyinSeq: sNum 个拼音
+	short *tag :	   sNum 个pos标记(012其他)
+	最后得到label序列需要的信息 存储在 cif中 
+*/
+void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short sNum,short * tag)
+{
     //tag: 0,1,2,3,4
     int i;
     cif[0].CharInPwNum=-1;
@@ -72,13 +91,16 @@ void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short s
     cif[0].PpInSentPos=1;
     cif[0].IpInSentPos=1;
 
-    for(i=0;i<sNum;i++){
+	// 获取每个pinyin的 声韵母 yindiao 等 
+    for(i=0;i<sNum;i++)
+	{
         strcpy(cif[i].pinyin,pinyinSeq[i]);
-        getShengYun(pinyinSeq[i], cif[i].shengmu, cif[i].yunmu,&(cif[i].yindiao));
+        getShengYun(pinyinSeq[i], cif[i].shengmu, cif[i].yunmu, &(cif[i].yindiao));
     }
 
-
-    for(i=1;i<sNum;i++){
+	// 除了第一个词外 后面每个字 
+    for(i=1;i<sNum;i++)
+	{
         if(tag[i-1]==0){
             cif[i].CharInPwPos=cif[i-1].CharInPwPos+1;
             cif[i].CharInPpPos=cif[i-1].CharInPpPos+1;
@@ -129,7 +151,9 @@ void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short s
             cif[i].IpInSentPos=cif[i-1].IpInSentPos+1;
         }
     }
-    for(i=0;i<sNum;i++){
+
+    for(i=0;i<sNum;i++)
+	{
         if(tag[i]==0){
             cif[i].CharInPwNum=-1;
             cif[i].CharInPpNum=-1;
@@ -221,6 +245,12 @@ int isQing(char *phone){
     return 0;
 }
 
+/*
+	初始化 410个音节 对应的音素拆分 
+	strcpy(pinyin2phone[189].pinyin,"lve");
+	strcpy(pinyin2phone[189].shengmu,"l");
+	strcpy(pinyin2phone[189].yunmu,"uxe");
+*/
 void TTS_Label_Init(){
 	strcpy(pinyin2phone[0].pinyin,"a");
 	strcpy(pinyin2phone[0].shengmu,"as");
@@ -1468,64 +1498,85 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
     fprintf(fp,"nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!",cif[0].shengmu,cif[0].yunmu);
     fprintf(fp,"0-%d;x-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x",cif[0].CharInSentNum,cif[0].PwInSentNum);
     fprintf(fp,"#0+%d/F:0_0/G:%d\n",cif[0].PpInSentNum,cif[0].IpInSentNum);
-    for(i=0;i<sNum;i++){
-        for(k=1;k<=2;k++){
+    for(i=0;i<sNum;i++)
+	{
+        for(k=1;k<=2;k++)
+		{
             //p1
-            if(k==1){
-                if(i==0){
+            if(k==1)
+			{
+                if(i==0)
+				{
                     fprintf(fp,"nu");
                 }
-                else{
-                    if(cif[i].CharInIpPos==1){
+                else
+				{
+                    if(cif[i].CharInIpPos==1)
+					{
                         fprintf(fp,"%s",cif[i-1].yunmu);
                     }
-                    else{
+                    else
+					{
                         fprintf(fp,"%s",cif[i-1].shengmu);
                     }
                 }
             }
-            else{
-                if(i==0){
+            else
+			{
+                if(i==0)
+				{
                     fprintf(fp,"sil");
                 }
-                else{
-                    if(cif[i].CharInIpPos==1){
+                else
+				{
+                    if(cif[i].CharInIpPos==1)
+					{
                         fprintf(fp,"sil");
                     }
-                    else{
+                    else
+					{
                         fprintf(fp,"%s",cif[i-1].yunmu);
                     }
                 }
             }
             //p2
-            if(k==1){
-                if(i==0){
+            if(k==1)
+			{
+                if(i==0)
+				{
                     fprintf(fp,"^sil");
                 }
-                else{
-                    if(cif[i].CharInIpPos==1){
+                else
+				{
+                    if(cif[i].CharInIpPos==1)
+					{
                         fprintf(fp,"^sil");
                     }
-                    else{
+                    else
+					{
                         fprintf(fp,"^%s",cif[i-1].yunmu);
                     }
                 }
             }
-            else{
+            else
+			{
                 fprintf(fp,"^%s",cif[i].shengmu);
             }
             //p3
-            if(k==1){
+            if(k==1)
+			{
                 fprintf(fp,"-%s",cif[i].shengmu);
             }
-            else{
+            else
+			{
                 fprintf(fp,"-%s",cif[i].yunmu);
             }
             //p4
             if(k==1){
                 fprintf(fp,"+%s",cif[i].yunmu);
             }
-            else{
+            else
+			{
                 if(i<sNum-1){
                     if(cif[i].CharInIpPos==cif[i].CharInIpNum){
                         fprintf(fp,"+sil");
@@ -1539,7 +1590,8 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
                 }
             }
             //p5
-            if(k==1){
+            if(k==1)
+			{
                 if(i<sNum-1){
                     if(cif[i].CharInIpPos==cif[i].CharInIpNum){
                         fprintf(fp,"=sil");
@@ -1552,7 +1604,8 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
                     fprintf(fp,"=sil");
                 }
             }
-            else{
+            else
+			{
                 if(i<sNum-1){
                     if(cif[i].CharInIpPos==cif[i].CharInIpNum){
                         fprintf(fp,"=%s",cif[i+1].shengmu);
@@ -1568,7 +1621,8 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
             //p6
             fprintf(fp,"@%d",k);
             //p7
-            if(k==1){
+            if(k==1)
+			{
                 fprintf(fp,"_%d",1-isQing(cif[i].shengmu));
             }
             else{
@@ -1666,7 +1720,8 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
             fprintf(fp,"/G:%d", cif[i].IpInSentNum);
             //line end
             fprintf(fp,"\n");
-            if(cif[i].CharInIpPos==cif[i].CharInIpNum && k==2){
+            if(cif[i].CharInIpPos==cif[i].CharInIpNum && k==2)
+			{
                 fprintf(fp,"%s^%s-sil+",cif[i].shengmu,cif[i].yunmu);
                 if(i<sNum-1 ){
                     fprintf(fp,"%s=%s@x_x/A:x_%d_x/B:%d-x-x@x-x&x-x#x-x$x-x!x-",

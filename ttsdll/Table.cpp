@@ -3,6 +3,9 @@
 #include<string.h>
 #include "Table.h"
 
+/*
+	去掉行尾的 \n 
+*/
 void dropReturnTag(char *c){
     if(strlen(c)==0){
         return;
@@ -12,22 +15,32 @@ void dropReturnTag(char *c){
     }
 }
 
-
-int Split(char *str,char **words,int *nWords){
+/*
+	输入为字符串: 中华/a 人民/b 共和国/c
+	根据空格切分 得到3个实体 
+*/
+int Split(char *str,char **words,int *nWords)
+{
     int i,j,k,n;
     n=0;
-    for(i=0;i<strlen(str);){
-        if(str[i]==' '||str[i]=='\t'){
+    for(i=0;i<strlen(str);)
+	{
+        if(str[i]==' '||str[i]=='\t')
+		{
             i=i+1;
             continue;
         }
-        else{
-            for(j=i;j<strlen(str);j++){
+        else
+		{
+			// 遇到第一个非 空格/tab 的字符  随即往后寻找空格和tab
+            for(j=i;j<strlen(str);j++)
+			{
                 if(str[j]==' '||str[i]=='\t'){
                     break;
                 }
             }
-            for(k=i;k<j;k++){
+            for(k=i;k<j;k++)
+			{
                 words[n][k-i]=str[k];
             }
             words[n][k-i]=0;
@@ -40,7 +53,7 @@ int Split(char *str,char **words,int *nWords){
 }
 
 /*
-	从tab中查找 key特征的值  没有返回0 
+	从Table中查找 key特征的值  没有返回0 
 */
 double GetTableValue(Table *tab,char * key){
     int i;
@@ -54,13 +67,17 @@ double GetTableValue(Table *tab,char * key){
     return 0;
 }
 
+/*
+	读取 韵律词 韵律短语 语调短语 model 
+	// Table 存储 nKeys 个 key:value 结点
+*/
 Table * ReadTable(char *fname)
 {
     FILE *fp;
     int i,nKeys;
     Table *tab;
     char lines[256];
-    tab=(Table *)malloc(sizeof(Table));
+    tab = (Table *)malloc(sizeof(Table));
 
     fp=fopen(fname,"r");
     fgets(lines,255,fp);
@@ -68,6 +85,7 @@ Table * ReadTable(char *fname)
 
     nKeys = atoi(lines);
     tab->nNodes = nKeys;
+	// 存储 nKeys 个 key:value 结点 
     tab->tn = (TableNode *)malloc(sizeof(TableNode)*nKeys);
 
     for(i=0; i<nKeys; i++)
@@ -84,7 +102,9 @@ Table * ReadTable(char *fname)
 }
 
 
-
+/*
+	在 STable 中查找某个 key  对应的值 
+*/
 char * GetSTableValue(STable *tab, char * key)
 {
     int i;

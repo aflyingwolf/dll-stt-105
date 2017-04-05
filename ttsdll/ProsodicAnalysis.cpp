@@ -26,7 +26,7 @@ int GetWrodPosSegment(char *str,char **words,char **pos,int *nWords){
 }
 
 /*
-	获取第 pos 个词的 16维韵律词特征 
+	获取第 pos 个词的 16维韵律词特征 存储在feats的相应位置
 */
 void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **feats,int *result)
 {
@@ -169,9 +169,13 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
 }
 
 /*
-	根据分词、词性标注，得到 韵律标注 词 结果 .
+	根据分词、词性序列，从 韵律词模型中查找 16维的特征得分。得到 韵律标注 词 结果 .
+	char **wordseq,char **posseq, 输入 分词/词性
+	nWords: 词个数 
+	int *result: 韵律标记结果 
 */
-void ProsodicWordAnalysis(char **wordseq,char **posseq,int nWords,int *result,Table *pwModel){
+void ProsodicWordAnalysis(char **wordseq,char **posseq,int nWords,int *result,Table *pwModel)
+{
     int i,j;
     double cost;
 	// 16*40 
@@ -188,7 +192,7 @@ void ProsodicWordAnalysis(char **wordseq,char **posseq,int nWords,int *result,Ta
 	for(i=0;i<nWords;i++)
 	{
 		// 第 i 个 词
-        GetProsodicWordFeat(wordseq,posseq,i,nWords,feats,result);
+        GetProsodicWordFeat(wordseq, posseq, i, nWords, feats, result);
 
         cost=0;
 		// feats 有16维   求和 大于等于0 即可
