@@ -126,23 +126,36 @@ int TTS::init(const char *model_dir)
 	/* file name of global variance switch */
 	char *fn_gv_switch = NULL;
 
-	/* global parameter */
-	int fperiod = 80;
-	double alpha = 0.42;
-	int stage = 0;               /* Gamma=-1/stage: if stage=0 then Gamma=0 */
+	// 帧移 16k对应80   1/200=5毫秒   ori-105=220   修改成80之后 语速嗷嗷快。。。
+	int fperiod = 220; // -p 	
+
+	// ori-105=0.55  改成0.2|0.42之后声音不清 像小孩  0.6|0.8像老牛
+	double alpha = 0.55;  // -a hts内部代码默认: 16000 80帧移 0.42 
+	
+	// ori-105=0  
+	// Gamma=-1/stage: if stage=0 then Gamma=0 
+	int stage = 0;   
+
+	// -b  ori-105=0.0   hts内部设置 -0.8~0.8之间 
+	// -b  0.2|0.4的时候 有脉冲信号 
 	double beta = 0.0;
 
-	int audio_buff_size = 1600; // ori-105
-	//int audio_buff_size = 16000; // mod-szm  
+	int audio_buff_size = 441000; // 设置初始buffsize 对结果无影响  ori-105=1600 
+	  
+	// 设置msd概率 ori-105=0.5 
+	// 改为 0.9 发音模糊不清 ; 0.3 0.1 时 没明显变化 
+	double uv_threshold = 0.5; 
 
-
-	double uv_threshold = 0.5;  // 设置msd概率 =lc
 	double gv_weight_mgc = 1.0;
 	double gv_weight_lf0 = 1.0;
 	double gv_weight_lpf = 1.0;
 
+	// 数值 变量 直接赋值
+	this->sampling_rate = 44100; // -s
 
-	HTS_Boolean use_log_gain = FALSE;
+
+	// 是否使用对数增益  ori-105=TRUE 
+	HTS_Boolean use_log_gain = TRUE;
 
 
 	/* delta window handler for mel-cepstrum */
@@ -255,22 +268,6 @@ int TTS::init(const char *model_dir)
 	_snprintf(fn_ts_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\tree-gv-lf0.inf", model_dir);
 	fn_ts_gvl[num_ts_gvl++] = fn_ts_gvl_tmp; // -ef 
 
-	// 数值 变量 直接赋值
-	this->sampling_rate = 44100; // -s
-
-	// 帧移 16k对应80   1/200=5毫秒? 
-	fperiod = 220; // -p
-	alpha = 0.55; // -a
-	stage = 0; // -g
-
-	// 是否使用对数增益
-	use_log_gain = TRUE; // ori-105
-	//use_log_gain = FALSE; // mod-szm
-	beta = 0.4; // -b 
-	beta = 0.0; // -b ?  
-
-	
-
 	/* number of models,trees check */
 	printf("interp=%d\tts_dur=%d\tts_mgc=%d\tts_lf0=%d\tms_dur=%d\tms_mgc=%d\tms_lf0=%d",
 		num_interp, num_ts_dur, num_ts_mgc, num_ts_lf0, num_ms_dur, num_ms_mgc, num_ms_lf0);
@@ -341,21 +338,26 @@ int TTS::init(const char *model_dir)
 
 	/* set parameter */
 	HTS_Engine_set_sampling_rate(engine, this->sampling_rate);
-	HTS_Engine_set_fperiod(engine, fperiod);
+
+	// 按照 帧移的意思  44100*0.005=220.5 
+	HTS_Engine_set_fperiod(engine, fperiod); //   
 	HTS_Engine_set_alpha(engine, alpha);
 	HTS_Engine_set_gamma(engine, stage);
-	HTS_Engine_set_log_gain(engine, use_log_gain);
+	HTS_Engine_set_log_gain(engine, use_log_gain);  // false 
 	HTS_Engine_set_beta(engine, beta);
 	HTS_Engine_set_audio_buff_size(engine, audio_buff_size);
 
 	/* set voiced/unvoiced threshold for stream[1] */
-	// 设置msd概率 
+	// 设置msd概率  0-1之间  
 	HTS_Engine_set_msd_threshold(engine, 1, uv_threshold);      
+
 	HTS_Engine_set_gv_weight(engine, 0, gv_weight_mgc);
 	HTS_Engine_set_gv_weight(engine, 1, gv_weight_lf0);
 	if (num_ms_lpf > 0 || num_ts_lpf > 0)
 		HTS_Engine_set_gv_weight(engine, 2, gv_weight_lpf);
-	for (i = 0; i < num_interp; i++) {
+
+	for (i = 0; i < num_interp; i++) 
+	{
 		HTS_Engine_set_duration_interpolation_weight(engine, i, rate_interp[i]);
 		HTS_Engine_set_parameter_interpolation_weight(engine, 0, i,
 			rate_interp[i]);
@@ -365,15 +367,27 @@ int TTS::init(const char *model_dir)
 			HTS_Engine_set_parameter_interpolation_weight(engine, 2, i,
 			rate_interp[i]);
 	}
+
 	if (num_interp == num_ms_gvm)
-	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(engine, 0, i, rate_interp[i]);
+	{
+		for (i = 0; i < num_interp; i++)
+			HTS_Engine_set_gv_interpolation_weight(engine, 0, i, rate_interp[i]);
+	}
+
+	
 	if (num_interp == num_ms_gvl)
-	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(engine, 1, i, rate_interp[i]);
+	{
+		for (i = 0; i < num_interp; i++)
+			HTS_Engine_set_gv_interpolation_weight(engine, 1, i, rate_interp[i]);
+	}
+	
+	
 	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0))
-	for (i = 0; i < num_interp; i++)
-		HTS_Engine_set_gv_interpolation_weight(engine, 2, i, rate_interp[i]);
+	{
+		for (i = 0; i < num_interp; i++)
+			HTS_Engine_set_gv_interpolation_weight(engine, 2, i, rate_interp[i]);
+	}
+	
 
 	
 	/////////////////////////////////////// label.txt /////////////////////////////////////////////
@@ -463,11 +477,9 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 
 	// 输入/输出 文件 
 	labfn = "./label.txt";
-	//rawfn = (char *)calloc(1000, sizeof(char));
-	//_snprintf(rawfn, 1000, "%s.raw", labfn);
-	rawfp = Getfp("test.raw", "wb");
-	//tracefn = (char *)calloc(1000, sizeof(char));
-	//_snprintf(tracefn, "%s.trace", labfn);
+
+	//rawfp = Getfp("test.raw", "wb");
+
 	tracefp = Getfp("test.trace", "wt");
 
 
@@ -627,13 +639,16 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	fflush(fp_log);
 
 	///////////////////////////////  合成  /////////////////////////////////
-	// 合成阶段 
-	double half_tone = 0.0;
+	
+	// // ori-105 =0.0 
+	// = 0.5时音色变的更像女生了。。。
+	double half_tone = 0.0;    
 
-
-	HTS_Boolean phoneme_alignment = FALSE; // ori-105
-	//HTS_Boolean phoneme_alignment = TRUE;// mod-szm  
-	double speech_speed = 1.0;
+	// ori-105=FALSE  改成TRUE 无变化 
+	HTS_Boolean phoneme_alignment = FALSE; 
+	 
+	// ori-105=1.0  改成1.2后 句子开头部分缺失。。。
+	double speech_speed = 1.0;  
 	double f;
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 

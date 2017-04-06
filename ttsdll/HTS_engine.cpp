@@ -736,7 +736,9 @@ void HTS_Engine_save_generated_speech(HTS_Engine * engine, FILE * fp)
    }
 }
 
-
+/*
+	mod-szm 自己添加的函数 仿照 HTS_Engine_save_generated_speech 
+*/
 int HTS_Engine_speech2short(HTS_Engine * engine, short *out_short, int len)
 {
 	int i=0;
