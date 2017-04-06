@@ -478,6 +478,7 @@ void HTS_Engine_load_label_from_string_list(HTS_Engine * engine, char **data,
 }
 
 /* HTS_Engine_create_sstream: parse label and determine state duration */
+// info-szm  sss 生成的部分
 void HTS_Engine_create_sstream(HTS_Engine * engine)
 {
    HTS_SStreamSet_create(&engine->sss, &engine->ms, &engine->label,
@@ -486,6 +487,7 @@ void HTS_Engine_create_sstream(HTS_Engine * engine)
 }
 
 /* HTS_Engine_create_pstream: generate speech parameter vector sequence */
+// info-szm  pss 生成的部分 
 void HTS_Engine_create_pstream(HTS_Engine * engine)
 {
    HTS_PStreamSet_create(&engine->pss, &engine->sss,
@@ -494,6 +496,7 @@ void HTS_Engine_create_pstream(HTS_Engine * engine)
 }
 
 /* HTS_Engine_create_gstream: synthesis speech */
+// info-szm  gss 生成的部分  合成语音 
 void HTS_Engine_create_gstream(HTS_Engine * engine)
 {
    HTS_GStreamSet_create(&engine->gss, &engine->pss, engine->global.stage,

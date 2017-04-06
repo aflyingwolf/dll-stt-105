@@ -545,6 +545,7 @@ typedef struct _HTS_SMatrices {
 } HTS_SMatrices;
 
 /* HTS_PStream: Individual PDF stream. */
+// 少 double *gv_buff;  double gv_weight;   多 HTS_Boolean *gv_switch;  
 typedef struct _HTS_PStream {
    int vector_length;           /* vector length (include static and dynamic features) */
    int static_length;           /* static features length */
@@ -564,6 +565,7 @@ typedef struct _HTS_PStream {
 } HTS_PStream;
 
 /* HTS_PStreamSet: Set of PDF streams. */
+// 此结构与 lucheng 结构一致 
 typedef struct _HTS_PStreamSet {
    HTS_PStream *pstream;        /* PDF streams */
    int nstream;                 /* # of PDF streams */
