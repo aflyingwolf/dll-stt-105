@@ -27,6 +27,10 @@ public:
     TTS();
     ~TTS();
 
+	/*
+	传入的是： model/like-77等 声学模型所在的目录 里面是直接是声学模型
+	需要的resource pinyin-dict等 在data目录下  写死了
+	*/
     int init(const char *model_dir);
     int line2short_array(const char *line, short *out, int out_size);
 

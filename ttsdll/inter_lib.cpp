@@ -76,7 +76,8 @@ TTS::~TTS()
 }
 
 /*
-	传入的是“根目录”： model/LC 里面是 Data model str_pro resource 等 
+	传入的是： model/like-77等 声学模型所在的目录 里面是直接是声学模型 
+	需要的resource pinyin-dict等 在data目录下  写死了 
 */
 int TTS::init(const char *model_dir)
 {
@@ -174,84 +175,84 @@ int TTS::init(const char *model_dir)
 
 	// 模型变量赋值 
 	char *fn_ts_dur_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_dur_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-dur.inf", model_dir);
+	_snprintf(fn_ts_dur_tmp, MAX_PATH_SIZE - 1, "%s\\tree-dur.inf", model_dir);
 	fn_ts_dur[num_ts_dur++] = fn_ts_dur_tmp; // -td
 
 	char *fn_ts_lf0_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-lf0.inf", model_dir);
+	_snprintf(fn_ts_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\tree-lf0.inf", model_dir);
 	fn_ts_lf0[num_ts_lf0++] = fn_ts_lf0_tmp; // -tf
 
 	char *fn_ts_mgc_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-mgc.inf", model_dir);
+	_snprintf(fn_ts_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\tree-mgc.inf", model_dir);
 	fn_ts_mgc[num_ts_mgc++] = fn_ts_mgc_tmp; // -tm
 
 	char *fn_ts_lpf_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-lpf.inf", model_dir);
+	_snprintf(fn_ts_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\tree-lpf.inf", model_dir);
 	fn_ts_lpf[num_ts_lpf++] = fn_ts_lpf_tmp; // -tl
 
 	char *fn_ms_dur_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_dur_tmp, MAX_PATH_SIZE - 1, "%s\\model\\dur.pdf", model_dir);
+	_snprintf(fn_ms_dur_tmp, MAX_PATH_SIZE - 1, "%s\\dur.pdf", model_dir);
 	fn_ms_dur[num_ms_dur++] = fn_ms_dur_tmp; // -md
 
 	char *fn_ms_lf0_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lf0.pdf", model_dir);
+	_snprintf(fn_ms_lf0_tmp, MAX_PATH_SIZE - 1, "%s\\lf0.pdf", model_dir);
 	fn_ms_lf0[num_ms_lf0++] = fn_ms_lf0_tmp; // -mf
 
 	char *fn_ms_mgc_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\model\\mgc.pdf", model_dir);
+	_snprintf(fn_ms_mgc_tmp, MAX_PATH_SIZE - 1, "%s\\mgc.pdf", model_dir);
 	fn_ms_mgc[num_ms_mgc++] = fn_ms_mgc_tmp; // -mm
 
 	char *fn_ms_lpf_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lpf.pdf", model_dir);
+	_snprintf(fn_ms_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\lpf.pdf", model_dir);
 	fn_ms_lpf[num_ms_lpf++] = fn_ms_lpf_tmp; // -ml
 
 	// -dm
 	char *fn_ws_mgc_tmp_1 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_mgc_tmp_1, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win1", model_dir);
+	_snprintf(fn_ws_mgc_tmp_1, MAX_PATH_SIZE - 1, "%s\\mgc.win1", model_dir);
 	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_1;
 
 	char *fn_ws_mgc_tmp_2 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_mgc_tmp_2, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win2", model_dir);
+	_snprintf(fn_ws_mgc_tmp_2, MAX_PATH_SIZE - 1, "%s\\mgc.win2", model_dir);
 	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_2;
 
 	char *fn_ws_mgc_tmp_3 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_mgc_tmp_3, MAX_PATH_SIZE - 1, "%s\\model\\mgc.win3", model_dir);
+	_snprintf(fn_ws_mgc_tmp_3, MAX_PATH_SIZE - 1, "%s\\mgc.win3", model_dir);
 	fn_ws_mgc[num_ws_mgc++] = fn_ws_mgc_tmp_3;
 	// -df
 	char *fn_ws_lf0_tmp_1 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_lf0_tmp_1, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win1", model_dir);
+	_snprintf(fn_ws_lf0_tmp_1, MAX_PATH_SIZE - 1, "%s\\lf0.win1", model_dir);
 	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_1;
 
 	char *fn_ws_lf0_tmp_2 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_lf0_tmp_2, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win2", model_dir);
+	_snprintf(fn_ws_lf0_tmp_2, MAX_PATH_SIZE - 1, "%s\\lf0.win2", model_dir);
 	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_2;
 
 	char *fn_ws_lf0_tmp_3 = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_lf0_tmp_3, MAX_PATH_SIZE - 1, "%s\\model\\lf0.win3", model_dir);
+	_snprintf(fn_ws_lf0_tmp_3, MAX_PATH_SIZE - 1, "%s\\lf0.win3", model_dir);
 	fn_ws_lf0[num_ws_lf0++] = fn_ws_lf0_tmp_3;
 
 	char *fn_ws_lpf_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ws_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\model\\lpf.win1", model_dir);
+	_snprintf(fn_ws_lpf_tmp, MAX_PATH_SIZE - 1, "%s\\lpf.win1", model_dir);
 	fn_ws_lpf[num_ws_lpf++] = fn_ws_lpf_tmp; // -dl
 
 	char *fn_ms_gvm_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-mgc.pdf", model_dir);
+	_snprintf(fn_ms_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\gv-mgc.pdf", model_dir);
 	fn_ms_gvm[num_ms_gvm++] = fn_ms_gvm_tmp; // -cm
 
 	char *fn_ms_gvl_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ms_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-lf0.pdf", model_dir);
+	_snprintf(fn_ms_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\gv-lf0.pdf", model_dir);
 	fn_ms_gvl[num_ms_gvl++] = fn_ms_gvl_tmp; // -cf 
 
 	char *fn_gv_switch_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_gv_switch_tmp, MAX_PATH_SIZE - 1, "%s\\model\\gv-switch.inf", model_dir);
+	_snprintf(fn_gv_switch_tmp, MAX_PATH_SIZE - 1, "%s\\gv-switch.inf", model_dir);
 	fn_gv_switch = fn_gv_switch_tmp; // -k
 
 	char *fn_ts_gvm_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-gv-mgc.inf", model_dir);
+	_snprintf(fn_ts_gvm_tmp, MAX_PATH_SIZE - 1, "%s\\tree-gv-mgc.inf", model_dir);
 	fn_ts_gvm[num_ts_gvm++] = fn_ts_gvm_tmp; // -em
 
 	char *fn_ts_gvl_tmp = new char[MAX_PATH_SIZE];
-	_snprintf(fn_ts_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\model\\tree-gv-lf0.inf", model_dir);
+	_snprintf(fn_ts_gvl_tmp, MAX_PATH_SIZE - 1, "%s\\tree-gv-lf0.inf", model_dir);
 	fn_ts_gvl[num_ts_gvl++] = fn_ts_gvl_tmp; // -ef 
 
 	// 数值 变量 直接赋值
@@ -379,23 +380,23 @@ int TTS::init(const char *model_dir)
 	// 其他模块初始化 TN 分词 词性标注 韵律标注
 	//韵律词、韵律短语、语调短语模型
 	char *wm = new char[MAX_PATH_SIZE];
-	_snprintf(wm, MAX_PATH_SIZE - 1, "%s/resource/ProsodicWordModel.txt", model_dir);
+	_snprintf(wm, MAX_PATH_SIZE - 1, "data/resource/ProsodicWordModel.txt");
 	pw = ReadTable(wm);   //韵律词
 
 	char *ppm = new char[MAX_PATH_SIZE];
-	_snprintf(ppm, MAX_PATH_SIZE - 1, "%s/resource/ProsodicPhraseModel.txt", model_dir);
+	_snprintf(ppm, MAX_PATH_SIZE - 1, "data/resource/ProsodicPhraseModel.txt");
 	pp = ReadTable(ppm);  //韵律短语
 
 	char *ipm = new char[MAX_PATH_SIZE];
-	_snprintf(ipm, MAX_PATH_SIZE - 1, "%s/resource/IntPhraseModel.txt", model_dir);
+	_snprintf(ipm, MAX_PATH_SIZE - 1, "data/resource/IntPhraseModel.txt");
 	ip = ReadTable(ipm);       //语调短语
 
 	char *dict = new char[MAX_PATH_SIZE];
-	_snprintf(dict, MAX_PATH_SIZE - 1, "%s/resource/dict.txt", model_dir);
+	_snprintf(dict, MAX_PATH_SIZE - 1, "data/resource/dict.txt");
 	wt = ReadSTable(dict);   //字典
 
 	char *c2p = new char[MAX_PATH_SIZE];
-	_snprintf(c2p, MAX_PATH_SIZE - 1, "%s/resource/char2pinyin.txt", model_dir);
+	_snprintf(c2p, MAX_PATH_SIZE - 1, "data/resource/char2pinyin.txt");
 	ct = ReadSTable(c2p);  //字音对照表
 
 	TTS_Label_Init(); //初始化Label模块
