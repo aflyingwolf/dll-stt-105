@@ -75,6 +75,9 @@ TTS::~TTS()
 
 }
 
+/*
+	传入的是“根目录”： model/LC 里面是 Data model str_pro resource 等 
+*/
 int TTS::init(const char *model_dir)
 {
 	fp_log = fopen("yl.log", "w");
@@ -668,15 +671,16 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	/* output */
 	// 存储short数组 
 	int len_short = HTS_Engine_speech2short(engine, out, out_size);
-	// 缩短句子间的静音长度  前后各减掉1秒钟 
-	int len_del = this->sampling_rate * 0.5;
+
+	//// 缩短句子间的静音长度  前后各减掉1秒钟 
+	//int len_del = this->sampling_rate * 0.2;	
+	//for (int ii = len_del; ii < len_short; ii++)
+	//{
+	//	out[ii - len_del] = out[ii];
+	//}
+	//len_short -= 2*len_del;
 	
-	for (int ii = len_del; ii < len_short; ii++)
-	{
-		out[ii - len_del] = out[ii];
-	}
-	len_short -= 2*len_del;
-	
+	// 释放资源 
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
