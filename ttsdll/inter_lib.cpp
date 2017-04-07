@@ -126,7 +126,8 @@ int TTS::init(const char *model_dir)
 	/* file name of global variance switch */
 	char *fn_gv_switch = NULL;
 
-	// 帧移 16k对应80   1/200=5毫秒   ori-105=220   修改成80之后 语速嗷嗷快。。。
+	// 帧移 16k对应80   1/200=5毫秒   
+	// ori-105=220   修改成80之后 语速嗷嗷快。。。
 	int fperiod = 220; // -p 	
 
 	// ori-105=0.55  改成0.2|0.42之后声音不清 像小孩  0.6|0.8像老牛
@@ -140,7 +141,8 @@ int TTS::init(const char *model_dir)
 	// -b  0.2|0.4的时候 有脉冲信号 
 	double beta = 0.0;
 
-	int audio_buff_size = 441000; // 设置初始buffsize 对结果无影响  ori-105=1600 
+	// 设置初始buffsize 对结果无影响  ori-105=1600 
+	int audio_buff_size = 1600; 
 	  
 	// 设置msd概率 ori-105=0.5 
 	// 改为 0.9 发音模糊不清 ; 0.3 0.1 时 没明显变化 
@@ -152,7 +154,6 @@ int TTS::init(const char *model_dir)
 
 	// 数值 变量 直接赋值
 	this->sampling_rate = 44100; // -s
-
 
 	// 是否使用对数增益  ori-105=TRUE 
 	HTS_Boolean use_log_gain = TRUE;
@@ -477,11 +478,8 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 
 	// 输入/输出 文件 
 	labfn = "./label.txt";
-
 	//rawfp = Getfp("test.raw", "wb");
-
 	tracefp = Getfp("test.trace", "wt");
-
 
     if(line == NULL || out == NULL || out_size < 1)
     {
@@ -502,11 +500,8 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 
     int len, i, msd_frame, nWord, nChar;
     short temp;
-    double *gen, *lf0;
-
-    lf0 = (double*)malloc(sizeof(double) * 20000);
+ 
 	TtsLabelCharInfo *cif = (TtsLabelCharInfo *)malloc(sizeof(TtsLabelCharInfo)*NUM_LEN);
-
 
     int *pwr,*ppr;
     short *ptag;
@@ -648,7 +643,8 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	HTS_Boolean phoneme_alignment = FALSE; 
 	 
 	// ori-105=1.0  改成1.2后 句子开头部分缺失。。。
-	double speech_speed = 1.0;  
+	double speech_speed = 1.0; 
+
 	double f;
 	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
@@ -684,9 +680,63 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	HTS_Engine_create_pstream(engine);  /* generate speech parameter vector sequence */
 	HTS_Engine_create_gstream(engine);  /* synthesize speech */
 
-	/* output */
-	// 存储short数组 
+	
+	// hts原始 存储short数组 
 	int len_short = HTS_Engine_speech2short(engine, out, out_size);
+
+	/*
+	// vocoder !!!
+	double *gen, *lf0;
+	lf0 = (double*)malloc(sizeof(double)* 20000);
+	for (i = 0, msd_frame = 0; i<engine->pss.total_frame; i++)
+	{
+		if (engine->pss.pstream[1].msd_flag[i])
+		{
+			lf0[i] = engine->pss.pstream[1].par[msd_frame][0];
+			msd_frame++;
+		}
+		else
+		{
+			lf0[i] = 0;
+		}
+	}
+	//合成过程
+	gen = LPCSynth(engine->pss.pstream[0].par + 5, lf0 + 5,
+		engine->pss.pstream[0].static_length - 1, engine->pss.total_frame - 5, &len);
+
+	// 将 gen最后面的456个采样点 丢弃 
+	short short0 = 0;
+	for (i = 0; i<len - 456; i++)
+	{
+		temp = (short)(gen[i] * 32700);
+		if (i < out_size)
+		{
+			out[i] = temp;
+		}
+		else
+		{
+			printf("out size too small!\n");
+			return -1;
+		}
+	}
+
+	// out最后的 LEN_SIL=300个采样点 加上静音 
+	for (i = 0; i<LEN_SIL; i++)
+	{
+		if (i + len - 456 < out_size)
+		{
+			out[i + len - 456] = short0;
+		}
+		else
+		{
+			printf("out size too small!\n");
+			return -1;
+		}
+
+	}
+
+	// end vocoder 
+	*/
 
 	//// 缩短句子间的静音长度  前后各减掉1秒钟 
 	//int len_del = this->sampling_rate * 0.2;	
@@ -736,50 +786,13 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 		fclose(rawfp);
 	if (tracefp != NULL)
 		fclose(tracefp);
-
-
-
-	// 原来的 
-	/*
- 
-    short short0 = 0;
-    for(i=0; i<len-456; i++)
-    {
-        temp = (short)(gen[i]*32700);
-        if(i < out_size)
-        {
-            out[i] = temp;
-        }
-        else
-        {
-            printf("out size too small!\n");
-            return -1;
-        }
-    }
-
-	for (i = 0; i<LEN_SIL; i++)
-    {
-        if(i+len-456 < out_size)
-        {
-            out[i+len-456] = short0;
-        }
-        else
-        {
-            printf("out size too small!\n");
-            return -1;
-        }
-
-    }
-	*/
-
-
 	
 
-	if (lf0 != NULL)
-	{
-		free(lf0);
-		lf0 = NULL;
-	}
+	//if (lf0 != NULL)
+	//{
+	//	free(lf0);
+	//	lf0 = NULL;
+	//}
 	if (cif != NULL)
 	{
 		free(cif);
@@ -812,6 +825,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	free(pinyinseq);
 	
 	return len_short;
+	//return len - 456 + LEN_SIL;
 
 }
 
