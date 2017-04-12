@@ -158,7 +158,12 @@ static int HTS_get_state_num(char *string)
    return atoi(string);
 }
 
-/* HTS_Question_load: Load questions from file */
+/* 
+	// HTS_Question_load: Load questions from file 
+	// 读取QS后面的:  QS RR-issaifras { "*=c@*","*=ch@*","*=q@*" } 
+	// HTS_Question * question : List of questions in a tree
+	// question->string   question->head
+*/
 static void HTS_Question_load(HTS_Question * question, FILE * fp)
 {
    char buff[HTS_MAXBUFLEN];
@@ -168,10 +173,12 @@ static void HTS_Question_load(HTS_Question * question, FILE * fp)
    HTS_get_pattern_token(fp, buff);
    question->string = HTS_strdup(buff);
    question->head = NULL;
+
    /* get pattern list */
    HTS_get_pattern_token(fp, buff);
    last_pattern = NULL;
-   if (strcmp(buff, "{") == 0) {
+   if (strcmp(buff, "{") == 0) 
+   {
       while (1) {
          HTS_get_pattern_token(fp, buff);
          pattern = (HTS_Pattern *) HTS_calloc(1, sizeof(HTS_Pattern));
@@ -285,7 +292,10 @@ static void HTS_Tree_parse_pattern(HTS_Tree * tree, char *string)
    }
 }
 
-/* HTS_Tree_load: Load trees */
+/* 
+	// HTS_Tree_load: Load trees
+	// 载入 tree-dur.inf 最后面的 -1 C-Consonant  -4  -2
+*/
 static void HTS_Tree_load(HTS_Tree * tree, FILE * fp, HTS_Question * question)
 {
    char buff[HTS_MAXBUFLEN];
@@ -293,23 +303,35 @@ static void HTS_Tree_load(HTS_Tree * tree, FILE * fp, HTS_Question * question)
 
    HTS_get_pattern_token(fp, buff);
    node = (HTS_Node *) HTS_calloc(1, sizeof(HTS_Node));
+   // 第一个Node  index=0 
    node->index = 0;
+   // HTS_Node 的根结点 
    tree->root = last_node = node;
 
-   if (strcmp(buff, "{") == 0) {
-      while (HTS_get_pattern_token(fp, buff), strcmp(buff, "}") != 0) {
-         node = HTS_Node_find(last_node, atoi(buff));
-         HTS_get_pattern_token(fp, buff);       /* load question at this node */
+   if (strcmp(buff, "{") == 0) 
+   {
+      while (HTS_get_pattern_token(fp, buff), strcmp(buff, "}") != 0) 
+	  {
+		  // -1 C-Consonant  -4  -2
 
+		  // -1 当前的index  前面读取到的结点中一定存在 
+         node = HTS_Node_find(last_node, atoi(buff));
+
+		 // C - Consonant   相当于HTS_Question中的 string (name)
+         HTS_get_pattern_token(fp, buff);       /* load question at this node */
+		 // 找到对应的 question 结点 
          node->quest = HTS_Question_find_question(question, buff);
+		 // 开辟新的 yes no 儿子结点
          node->yes = (HTS_Node *) HTS_calloc(1, sizeof(HTS_Node));
          node->no = (HTS_Node *) HTS_calloc(1, sizeof(HTS_Node));
 
+		 // no结点  -4
          HTS_get_pattern_token(fp, buff);
          if (HTS_is_num(buff))
             node->no->index = atoi(buff);
          else
-            node->no->pdf = HTS_name2num(buff);
+            node->no->pdf = HTS_name2num(buff);   // 非num "dur_s2_234" 的就是叶子结点   得到对应数字:234
+		 // node->no->next  指向：从x结点能找到node结点的  那个x结点 
          node->no->next = last_node;
          last_node = node->no;
 
@@ -321,7 +343,8 @@ static void HTS_Tree_load(HTS_Tree * tree, FILE * fp, HTS_Question * question)
          node->yes->next = last_node;
          last_node = node->yes;
       }
-   } else {
+   } else 
+   {
       node->pdf = HTS_name2num(buff);
    }
 }
@@ -443,7 +466,10 @@ static void HTS_Model_initialize(HTS_Model * model)
    model->question = NULL;
 }
 
-/* HTS_Model_load_pdf: load pdfs */
+/* 
+	// HTS_Model_load_pdf: load pdfs 
+	// 读 dur.pdf 二进制文件的函数 
+*/
 static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
                                HTS_Boolean msd_flag)
 {
@@ -456,15 +482,19 @@ static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
       HTS_error(1, "HTS_Model_load_pdf: File for pdfs is not specified.\n");
 
    /* load pdf */
-   model->ntree = ntree;
+   model->ntree = ntree;  // 1
+
    /* read MSD flag */
    HTS_fread_big_endian(&i, sizeof(int), 1, fp);
-   if ((i != 0 || msd_flag != FALSE) && (i != 1 || msd_flag != TRUE))
+   // msd_flag == FALSE 时 i必须等于0 
+   if ( (i != 0 || msd_flag != FALSE) && (i != 1 || msd_flag != TRUE) )
       HTS_error(1, "HTS_Model_load_pdf: Failed to load header of pdfs.\n");
+   
    /* read stream size */
    HTS_fread_big_endian(&ssize, sizeof(int), 1, fp);
    if (ssize < 1)
       HTS_error(1, "HTS_Model_load_pdf: Failed to load header of pdfs.\n");
+   
    /* read vector size */
    HTS_fread_big_endian(&model->vector_length, sizeof(int), 1, fp);
    if (model->vector_length < 0)
@@ -473,6 +503,7 @@ static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
                 model->vector_length);
    model->npdf = (int *) HTS_calloc(ntree, sizeof(int));
    model->npdf -= 2;
+
    /* read the number of pdfs */
    HTS_fread_big_endian(&model->npdf[2], sizeof(int), ntree, fp);
    for (i = 2; i <= ntree + 1; i++)
@@ -482,8 +513,10 @@ static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
                    i);
    model->pdf = (double ***) HTS_calloc(ntree, sizeof(double **));
    model->pdf -= 2;
+
    /* read means and variances */
-   if (msd_flag) {              /* for MSD */
+   if (msd_flag) 
+   {              /* for MSD */
       for (j = 2; j <= ntree + 1; j++) {
          model->pdf[j] = (double **)
              HTS_calloc(model->npdf[j], sizeof(double *));
@@ -511,12 +544,16 @@ static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
             }
          }
       }
-   } else {                     /* for non MSD */
-      for (j = 2; j <= ntree + 1; j++) {
+   } else 
+   {                     
+	   /* for non MSD */
+      for (j = 2; j <= ntree + 1; j++) 
+	  {
          model->pdf[j] =
              (double **) HTS_calloc(model->npdf[j], sizeof(double *));
          model->pdf[j]--;
-         for (k = 1; k <= model->npdf[j]; k++) {
+         for (k = 1; k <= model->npdf[j]; k++) 
+		 {
             model->pdf[j][k] =
                 (double *) HTS_calloc(2 * model->vector_length, sizeof(double));
             for (l = 0; l < model->vector_length; l++) {
@@ -530,7 +567,10 @@ static void HTS_Model_load_pdf(HTS_Model * model, FILE * fp, int ntree,
    }
 }
 
-/* HTS_Model_load_tree: load trees */
+/* 
+	// HTS_Model_load_tree: load trees
+	// 载入 tree-dur.inf 的函数 
+*/
 static void HTS_Model_load_tree(HTS_Model * model, FILE * fp)
 {
    char buff[HTS_MAXBUFLEN];
@@ -547,26 +587,37 @@ static void HTS_Model_load_tree(HTS_Model * model, FILE * fp)
    last_tree = NULL;
    while (!feof(fp)) {
       HTS_get_pattern_token(fp, buff);
-      /* parse questions */
-      if (strcmp(buff, "QS") == 0) {
+      
+	  /* parse questions */
+	  // 读取 问题集的一行  
+      if (strcmp(buff, "QS") == 0) 
+	  {
+		  // 单行得到的 List 
          question = (HTS_Question *) HTS_calloc(1, sizeof(HTS_Question));
+
          HTS_Question_load(question, fp);
          if (model->question)
             last_question->next = question;
          else
-            model->question = question;
+            model->question = question;   // 所有quesion 构成的list的头  
          question->next = NULL;
          last_question = question;
       }
+
       /* parse trees */
-      state = HTS_get_state_num(buff);
-      if (state != 0) {
+	  // {*}[2] 后面的 ：   -1 C-Consonant                                        -4         -2  
+      state = HTS_get_state_num(buff); // 2 
+      if (state != 0) 
+	  {
          tree = (HTS_Tree *) HTS_calloc(1, sizeof(HTS_Tree));
          tree->next = NULL;
          tree->root = NULL;
          tree->head = NULL;
-         tree->state = state;
-         HTS_Tree_parse_pattern(tree, buff);
+         tree->state = state; // 2
+         HTS_Tree_parse_pattern(tree, buff); // { 
+
+		 // 载入 所有的 : -1 C-Consonant  -4   -2
+		 // 需要使用 以前得到的 model->question 
          HTS_Tree_load(tree, fp, model->question);
          if (model->tree)
             last_tree->next = tree;
@@ -652,7 +703,10 @@ static void HTS_Stream_load_pdf(HTS_Stream * stream, FILE ** fp, int ntree,
    stream->vector_length = stream->model[0].vector_length;
 }
 
-/* HTS_Stream_load_pdf_and_tree: load PDFs and trees */
+/* 
+	// HTS_Stream_load_pdf_and_tree: load PDFs and trees 
+	// 内部调用 读 tree-dur.inf dur.pdf 的函数  
+*/
 static void HTS_Stream_load_pdf_and_tree(HTS_Stream * stream, FILE ** pdf_fp,
                                          FILE ** tree_fp, HTS_Boolean msd_flag,
                                          int interpolation_size)
@@ -660,8 +714,8 @@ static void HTS_Stream_load_pdf_and_tree(HTS_Stream * stream, FILE ** pdf_fp,
    int i;
 
    /* initialize */
-   stream->msd_flag = msd_flag;
-   stream->interpolation_size = interpolation_size;
+   stream->msd_flag = msd_flag;  // 函数中默认为:  FALSE 
+   stream->interpolation_size = interpolation_size; // 1
    stream->model =
        (HTS_Model *) HTS_calloc(interpolation_size, sizeof(HTS_Model));
    /* load */
@@ -673,7 +727,9 @@ static void HTS_Stream_load_pdf_and_tree(HTS_Stream * stream, FILE ** pdf_fp,
          HTS_error(1,
                    "HTS_Stream_load_pdf_and_tree: File for duration trees is not specified.\n");
       HTS_Model_initialize(&stream->model[i]);
+	  // 读 tree-dur.inf 函数 
       HTS_Model_load_tree(&stream->model[i], tree_fp[i]);
+	  // 读 dur.pdf 函数 
       HTS_Model_load_pdf(&stream->model[i], pdf_fp[i], stream->model[i].ntree,
                          stream->msd_flag);
    }
@@ -730,8 +786,8 @@ void HTS_ModelSet_load_duration(HTS_ModelSet * ms, FILE ** pdf_fp,
       HTS_error(1,
                 "HTS_ModelSet_load_duration: File for duration trees is not specified.\n");
 
-   HTS_Stream_load_pdf_and_tree(&ms->duration, pdf_fp, tree_fp, FALSE,
-                                interpolation_size);
+   HTS_Stream_load_pdf_and_tree(&ms->duration, pdf_fp, tree_fp, FALSE, interpolation_size);
+
    ms->nstate = ms->duration.vector_length;
 }
 

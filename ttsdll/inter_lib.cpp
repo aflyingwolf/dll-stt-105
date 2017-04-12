@@ -148,6 +148,9 @@ int TTS::init(const char *model_dir)
 	// 改为 0.9 发音模糊不清 ; 0.3 0.1 时 没明显变化 
 	double uv_threshold = 0.5; 
 
+	// ori-105 全是 1.0 
+	// 修改成 10.0|2.0 后，声音清晰，但是：短句子的开头部分丢失
+	// 修改成 0.3 后，声音变得飘飘然  像远场含糊不清 
 	double gv_weight_mgc = 1.0;
 	double gv_weight_lf0 = 1.0;
 	double gv_weight_lpf = 1.0;
@@ -155,8 +158,8 @@ int TTS::init(const char *model_dir)
 	// 数值 变量 直接赋值
 	this->sampling_rate = 44100; // -s
 
-	// 是否使用对数增益  ori-105=TRUE 
-	HTS_Boolean use_log_gain = TRUE;
+	// 是否使用对数增益  ori-105=TRUE   for LSP的设置  hts-105训练时候未使用LPC2LSP  
+	HTS_Boolean use_log_gain = FALSE;
 
 
 	/* delta window handler for mel-cepstrum */
@@ -170,7 +173,11 @@ int TTS::init(const char *model_dir)
 	num_interp = 1;
 	rate_interp = (double *)calloc(num_interp, sizeof(double));
 	for (i = 0; i < num_interp; i++)
+	{
+		// ori-105=1.0
 		rate_interp[i] = 1.0;
+	}
+		
 
 	fn_ms_dur = (char **)calloc(num_interp, sizeof(char *));
 	fn_ms_mgc = (char **)calloc(num_interp, sizeof(char *));
@@ -287,7 +294,8 @@ int TTS::init(const char *model_dir)
 		}
 	}
 
-	/* initialize (stream[0] = spectrum, stream[1] = lf0, stream[2] = low-pass filter) */
+	// initialize (stream[0] = spectrum, stream[1] = lf0, stream[2] = low-pass filter) 
+	// 这里面初始化了一堆 engine 需要的参数 :
 	if (num_ms_lpf > 0 || num_ts_lpf > 0) {
 		HTS_Engine_initialize(engine, 3);
 	}
@@ -295,9 +303,12 @@ int TTS::init(const char *model_dir)
 		HTS_Engine_initialize(engine, 2);
 	}
 
-	/* load duration model */
+	// load duration model  dur模型载入  
 	printf("fn_ts_dur=%s\t", fn_ts_dur[0]);
+	// engine | dur.pdf | tree-dur.inf | num_interp=1 
+	// 内部调用 HTS_Model_load_tree 子函数 载入 tree-dur.inf 
 	HTS_Engine_load_duration_from_fn(engine, fn_ms_dur, fn_ts_dur, num_interp);
+
 	/* load stream[0] (spectrum model) */
 	HTS_Engine_load_parameter_from_fn(engine, fn_ms_mgc, fn_ts_mgc, fn_ws_mgc,
 		0, FALSE, num_ws_mgc, num_interp);
@@ -339,12 +350,10 @@ int TTS::init(const char *model_dir)
 
 	/* set parameter */
 	HTS_Engine_set_sampling_rate(engine, this->sampling_rate);
-
-	// 按照 帧移的意思  44100*0.005=220.5 
-	HTS_Engine_set_fperiod(engine, fperiod); //   
+	HTS_Engine_set_fperiod(engine, fperiod);  
 	HTS_Engine_set_alpha(engine, alpha);
 	HTS_Engine_set_gamma(engine, stage);
-	HTS_Engine_set_log_gain(engine, use_log_gain);  // false 
+	HTS_Engine_set_log_gain(engine, use_log_gain);  
 	HTS_Engine_set_beta(engine, beta);
 	HTS_Engine_set_audio_buff_size(engine, audio_buff_size);
 
@@ -468,38 +477,48 @@ int TTS::init(const char *model_dir)
 
 int TTS::line2short_array(const char *line, short *out, int out_size)
 {
+	double f;
+	int ret = 0;
+	const int MAX_LINE_SIZE = 10000;
+	int len, i, msd_frame, nWord, nChar;
+	short temp;
+
 	int NUM_WORD = 200; // 去掉原来 ptag 中的60
 	int NUM_SEQ = 500; // 代替原来的 150 
 	int NUM_LEN = 1000; // 代替原来的 300
 
 	// 输入lab文件名		输出raw		trace
 	char *labfn = NULL, rawfn = NULL, tracefn = NULL;
-	FILE *wavfp = NULL, *rawfp = NULL, *tracefp = NULL;
+	FILE *wavfp = NULL, *rawfp = NULL, *tracefp = NULL;	
+	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
 
 	// 输入/输出 文件 
 	labfn = "./label.txt";
 	//rawfp = Getfp("test.raw", "wb");
-	tracefp = Getfp("test.trace", "wt");
+	tracefp = Getfp("log\\test.trace", "wt");
+	durfp = Getfp("log\\test.dur", "wt");
+	mgcfp = Getfp("log\\test.mgc", "wt");
+	lf0fp = Getfp("log\\test.lf0", "wt");
+	lpffp = Getfp("log\\test.lpf", "wt");
 
     if(line == NULL || out == NULL || out_size < 1)
     {
         printf("line==NULL || out == NULL || out_size < 1\n");
         return -1;
     }
-	int ret = 0;
-	const int MAX_LINE_SIZE = 10000;
+	
     char tline[MAX_LINE_SIZE]={0};
     _snprintf(tline, MAX_LINE_SIZE, "%s", line);
     dropReturnTag(tline);
 	fprintf(fp_log, "tline=%s\n",tline);
 	fflush(fp_log);
+
 	if (strlen(tline) == 0)
 	{
 		return 0;
 	}
 
-    int len, i, msd_frame, nWord, nChar;
-    short temp;
+
  
 	TtsLabelCharInfo *cif = (TtsLabelCharInfo *)malloc(sizeof(TtsLabelCharInfo)*NUM_LEN);
 
@@ -645,8 +664,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	// ori-105=1.0  改成1.2后 句子开头部分缺失。。。
 	double speech_speed = 1.0; 
 
-	double f;
-	FILE *durfp = NULL, *mgcfp = NULL, *lf0fp = NULL, *lpffp = NULL;
+
 
 	/* synthesis */
 	HTS_Engine_refresh(engine);  // 新加 
@@ -657,16 +675,17 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	if (phoneme_alignment)       /* modify label */
 		HTS_Label_set_frame_specified_flag(&(engine->label), TRUE);
 	
-	//if (speech_speed != 1.0)     // modify label  ori-105
-	if (abs(speech_speed-1.0) > 1e-6)     // modify label mod-szm 
+	if (speech_speed != 1.0)     // modify label  ori-105
+	//if (abs(speech_speed-1.0) > 1e-6)     // modify label mod-szm 
 		HTS_Label_set_speech_speed(&(engine->label), speech_speed);
 	
 	//参数规划过程
-	HTS_Engine_create_sstream(engine);  /* parse label and determine state duration */
+	// parse label and determine state duration 
+	HTS_Engine_create_sstream(engine);  
 	
 	// modify f0 
-	if (abs(half_tone) > 1e-6) // mod-szm
-	//if (half_tone != 0.0) // ori-105
+	//if (abs(half_tone) > 1e-6) // mod-szm
+	if (half_tone != 0.0) // ori-105
 	{      
 		for (i = 0; i < HTS_SStreamSet_get_total_state(&(engine->sss)); i++) 
 		{
@@ -746,7 +765,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	//}
 	//len_short -= 2*len_del;
 	
-	// 释放资源 
+	// 打印log 
 	if (tracefp != NULL)
 		HTS_Engine_save_information(engine, tracefp);
 	if (durfp != NULL)
@@ -767,7 +786,6 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 
 	/* free */
 	HTS_Engine_refresh(engine);
-
 
 
 

@@ -449,7 +449,12 @@ typedef struct _HTS_SStreamSet {
 /* HTS_SStreamSet_initialize: initialize state stream set */
 void HTS_SStreamSet_initialize(HTS_SStreamSet * sss);
 
-/* HTS_SStreamSet_create: parse label and determine state duration */
+
+/*
+// HTS_SStreamSet_create: parse label and determine state duration
+// 参数规划的核心函数.
+// 解析label序列  计算状态持续时间等
+*/
 void HTS_SStreamSet_create(HTS_SStreamSet * sss, HTS_ModelSet * ms,
                            HTS_Label * label, double *duration_iw,
                            double **parameter_iw, double **gv_iw);
@@ -693,7 +698,11 @@ typedef struct _HTS_Engine {
 /* HTS_Engine_initialize: initialize engine */
 void HTS_Engine_initialize(HTS_Engine * engine, int nstream);
 
-/* HTS_engine_load_duration_from_fn: load duration pdfs ,trees and number of state from file names */
+
+/*
+// HTS_Engine_load_duratin_from_fn: load duration pdfs, trees and number of state from file names
+// 载入 dur模型，变量 ： // engine | dur.pdf | tree-dur.inf | num_interp=1
+*/
 void HTS_Engine_load_duration_from_fn(HTS_Engine * engine, char **pdf_fn,
                                       char **tree_fn, int interpolation_size);
 
@@ -808,7 +817,11 @@ int HTS_Engine_get_nstream(HTS_Engine * engine);
 /* HTS_Engine_get_nstate: get number of state */
 int HTS_Engine_get_nstate(HTS_Engine * engine);
 
-/* HTS_Engine_load_label_from_fn: load label from file pointer */
+
+/*
+// HTS_Engine_load_label_from_fn: load label from file name
+// 读取 label.txt 文件到 HTS_Label 结构中
+*/
 void HTS_Engine_load_label_from_fn(HTS_Engine * engine, char *fn);
 
 /* HTS_Engine_load_label_from_fp: load label from file name */
@@ -821,7 +834,13 @@ void HTS_Engine_load_label_from_string(HTS_Engine * engine, char *data);
 void HTS_Engine_load_label_from_string_list(HTS_Engine * engine, char **data,
                                             int size);
 
-/* HTS_Engine_create_sstream: parse label and determine state duration */
+
+/*
+// HTS_Engine_create_sstream: parse label and determine state duration
+// info-szm  sss 生成的部分
+// 参数规划的核心函数.
+// 解析label序列  计算状态持续时间等
+*/
 void HTS_Engine_create_sstream(HTS_Engine * engine);
 
 /* HTS_Engine_create_pstream: generate speech parameter vector sequence */
@@ -848,7 +867,11 @@ int HTS_Engine_speech2short(HTS_Engine * engine, short *out_short, int len);
 /* HTS_Engine_save_riff: output RIFF format file */
 void HTS_Engine_save_riff(HTS_Engine * engine, FILE * wavfp);
 
-/* HTS_Engine_refresh: free memory per one time synthesis */
+
+/*
+// HTS_Engine_refresh: free model per one time synthesis
+// 清空engine中的 : gss  pss  sss  label
+*/
 void HTS_Engine_refresh(HTS_Engine * engine);
 
 /* HTS_Engine_clear: free engine */

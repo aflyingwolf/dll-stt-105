@@ -62,13 +62,15 @@ void getShengYun(char *pinyin,char *shengmu,char *yunmu,short *yindiao)
 
 /*
 	char **pinyinSeq: sNum 个拼音
-	short *tag :	   sNum 个pos标记(012其他)
+	short *tag :	   sNum 个pos标记(0123其他)  0表示韵律词内部 句尾默认是4 
 	最后得到label序列需要的信息 存储在 cif中 
 */
 void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short sNum,short * tag)
 {
-    //tag: 0,1,2,3,4
+    //tag: 0,1,2
     int i;
+
+	// 第一个词  从后往前数 
     cif[0].CharInPwNum=-1;
     cif[0].CharInPpNum=-1;
     cif[0].CharInIpNum=-1;
@@ -79,7 +81,7 @@ void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short s
     cif[0].PpInIpNum=-1;
     cif[0].PpInSentNum=-1;
     cif[0].IpInSentNum=-1;
-
+	// 从前往后 ?
     cif[0].CharInPwPos=1;
     cif[0].CharInPpPos=1;
     cif[0].CharInIpPos=1;
@@ -101,48 +103,67 @@ void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short s
 	// 除了第一个词外 后面每个字 
     for(i=1;i<sNum;i++)
 	{
-        if(tag[i-1]==0){
-            cif[i].CharInPwPos=cif[i-1].CharInPwPos+1;
-            cif[i].CharInPpPos=cif[i-1].CharInPpPos+1;
-            cif[i].CharInIpPos=cif[i-1].CharInIpPos+1;
-            cif[i].CharInSentPos=i+1;
-            cif[i].PwInPpPos=cif[i-1].PwInPpPos;
-            cif[i].PwInIpPos=cif[i-1].PwInIpPos;
-            cif[i].PwInSentPos=cif[i-1].PwInSentPos;
-            cif[i].PpInIpPos=cif[i-1].PpInIpPos;
-            cif[i].PpInSentPos=cif[i-1].PpInSentPos;
-            cif[i].IpInSentPos=cif[i-1].IpInSentPos;
+		// 当前char和上一个char 属于一个韵律词  
+        if(tag[i-1]==0)
+		{
+			// 新的char 
+            cif[i].CharInPwPos		= cif[i-1].CharInPwPos+1;
+            cif[i].CharInPpPos		= cif[i-1].CharInPpPos+1;
+            cif[i].CharInIpPos		= cif[i-1].CharInIpPos+1;
+            cif[i].CharInSentPos	= i+1;
+			// 韵律词 信息  与 i-1 相同 
+            cif[i].PwInPpPos	=	cif[i-1].PwInPpPos;
+            cif[i].PwInIpPos	=	cif[i-1].PwInIpPos;
+            cif[i].PwInSentPos	=	cif[i-1].PwInSentPos;
+            cif[i].PpInIpPos	=	cif[i-1].PpInIpPos;
+            cif[i].PpInSentPos	=	cif[i-1].PpInSentPos;
+            cif[i].IpInSentPos	=	cif[i-1].IpInSentPos;
         }
-        else if(tag[i-1]==1){
-            cif[i].CharInPwPos=1;
-            cif[i].CharInPpPos=cif[i-1].CharInPpPos+1;
-            cif[i].CharInIpPos=cif[i-1].CharInIpPos+1;
+		// 前一个词处  是韵律词划分
+		// 当前char 是新的韵律词开始   
+        else if(tag[i-1]==1)
+		{
+			// 新的char 
+            cif[i].CharInPwPos	=1;
+            cif[i].CharInPpPos	=cif[i-1].CharInPpPos+1;
+            cif[i].CharInIpPos	=cif[i-1].CharInIpPos+1;
             cif[i].CharInSentPos=i+1;
-            cif[i].PwInPpPos=cif[i-1].PwInPpPos+1;
-            cif[i].PwInIpPos=cif[i-1].PwInIpPos+1;
-            cif[i].PwInSentPos=cif[i-1].PwInSentPos+1;
-            cif[i].PpInIpPos=cif[i-1].PpInIpPos;
-            cif[i].PpInSentPos=cif[i-1].PpInSentPos;
-            cif[i].IpInSentPos=cif[i-1].IpInSentPos;
+			// 新的韵律词 
+            cif[i].PwInPpPos	=	cif[i-1].PwInPpPos+1;
+            cif[i].PwInIpPos	=	cif[i-1].PwInIpPos+1;
+            cif[i].PwInSentPos	=	cif[i-1].PwInSentPos+1;
+			// 同一个韵律短语和语调短语 
+            cif[i].PpInIpPos	=	cif[i-1].PpInIpPos;
+            cif[i].PpInSentPos	=	cif[i-1].PpInSentPos;
+            cif[i].IpInSentPos	=	cif[i-1].IpInSentPos;
 
         }
-        else if(tag[i-1]==2){
+		// 新的 韵律短语 pp  
+        else if(tag[i-1]==2)
+		{
+			// 新 char 
             cif[i].CharInPwPos=1;
             cif[i].CharInPpPos=1;
             cif[i].CharInIpPos=cif[i-1].CharInIpPos+1;
             cif[i].CharInSentPos=i+1;
-            cif[i].PwInPpPos=1;
-            cif[i].PwInIpPos=cif[i-1].PwInIpPos+1;
-            cif[i].PwInSentPos=cif[i-1].PwInSentPos+1;
+			// 新 韵律词开始  pw
+            cif[i].PwInPpPos	=	1;
+            cif[i].PwInIpPos	=	cif[i-1].PwInIpPos+1;
+            cif[i].PwInSentPos	=	cif[i-1].PwInSentPos+1;
+			// 新 韵律短语开始 pp 
             cif[i].PpInIpPos=cif[i-1].PpInIpPos+1;
             cif[i].PpInSentPos=cif[i-1].PpInSentPos+1;
             cif[i].IpInSentPos=cif[i-1].IpInSentPos;
         }
-        else{
+		// 3或4 新语调短语 开始 ip 
+        else
+		{
+			// 新 char 
             cif[i].CharInPwPos=1;
             cif[i].CharInPpPos=1;
             cif[i].CharInIpPos=1;
             cif[i].CharInSentPos=i+1;
+			// 新pw 
             cif[i].PwInPpPos=1;
             cif[i].PwInIpPos=1;
             cif[i].PwInSentPos=cif[i-1].PwInSentPos+1;
@@ -1498,15 +1519,23 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
     fprintf(fp,"nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!",cif[0].shengmu,cif[0].yunmu);
     fprintf(fp,"0-%d;x-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x",cif[0].CharInSentNum,cif[0].PwInSentNum);
     fprintf(fp,"#0+%d/F:0_0/G:%d\n",cif[0].PpInSentNum,cif[0].IpInSentNum);
+	//// todo 
+	//fprintf(fp, "nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!", cif[0].shengmu, cif[0].yunmu);
+	//fprintf(fp, "0-x;%d-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x", cif[0].CharInSentNum, cif[0].PwInSentNum);
+	//fprintf(fp, "#0+%d/F:0_0/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
     for(i=0;i<sNum;i++)
 	{
+		// 每一个 音节
         for(k=1;k<=2;k++)
 		{
+			// 声母 韵母 
             //p1
             if(k==1)
 			{
+				// 声母
                 if(i==0)
 				{
+					// 第一个char 
                     fprintf(fp,"nu");
                 }
                 else
@@ -1523,8 +1552,10 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
             }
             else
 			{
+				// 韵母 
                 if(i==0)
 				{
+					// 第一个char 
                     fprintf(fp,"sil");
                 }
                 else
@@ -1736,7 +1767,10 @@ void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
                         cif[i].IpInSentNum-cif[i].IpInSentPos+1,cif[i].IpInSentNum);
             }
         }
-    }
-    fclose(fp);
+    
+	}
+    
+	fclose(fp);
+
 }
 

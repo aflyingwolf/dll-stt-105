@@ -120,18 +120,27 @@ FILE *HTS_get_fp(const char *name, const char *opt)
    return (fp);
 }
 
-/* HTS_get_pattern_token: get pattern token */
+/* 
+	// HTS_get_pattern_token: get pattern token 
+	// 过滤掉 左边的 空格和\n
+	// 过滤掉 单引号 双引号 并记录
+	// 遇到 逗号 拷贝 并 结束
+	// 不断copy  直到遇到: 单引号 双引号 空格 \n 文件尾
+*/
 void HTS_get_pattern_token(FILE * fp, char *buff)
 {
    char c;
    int i;
+   // 前面是 单引号 双引号 
    HTS_Boolean squote = FALSE, dquote = FALSE;
 
    c = fgetc(fp);
 
+   // 过滤掉 左边的 空格和\n 
    while (c == ' ' || c == '\n')
       c = fgetc(fp);
 
+   // 过滤掉 单引号 双引号 并记录 
    if (c == '\'') {             /* single quote case */
       c = fgetc(fp);
       squote = TRUE;
@@ -142,13 +151,16 @@ void HTS_get_pattern_token(FILE * fp, char *buff)
       dquote = TRUE;
    }
 
+   // 遇到 逗号 拷贝 并 结束 
    if (c == ',') {              /*special character ',' */
       strcpy(buff, ",");
       return;
    }
 
+   // 不断copy  直到遇到: 单引号 双引号 空格 \n 文件尾 
    i = 0;
-   while (1) {
+   while (1) 
+   {
       buff[i++] = c;
       c = fgetc(fp);
       if (squote && c == '\'')
@@ -168,7 +180,12 @@ void HTS_get_pattern_token(FILE * fp, char *buff)
    buff[i] = '\0';
 }
 
-/* HTS_get_token: get token (separator are space,tab,line break) */
+/* 
+//HTS_get_token: get token (separator are space,tab,line break) 
+// 使用：sep=空格 tab 换行符号 分割
+// 不断的读入字符char  过滤掉开头的sep等
+// 然后开始 拷贝到buff 中  直到遇到下一个分隔符sep
+*/
 HTS_Boolean HTS_get_token(FILE * fp, char *buff)
 {
    char c;

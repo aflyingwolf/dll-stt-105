@@ -1,4 +1,4 @@
-﻿生成启动时间为 2017/4/7 星期五 下午 12:41:39。
+﻿生成启动时间为 2017/4/12 星期三 下午 3:47:24。
      1>项目“D:\bdy\项目-源码\so_tts_adapt\g-tts_adap_105-dll\g-ttsdll-adap-105\ttsdll\ttsdll.vcxproj”在节点 2 上(Rebuild 个目标)。
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D TTSDLL_EXPORTS /D _CRT_SECURE_NO_WARNINGS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Char2Pinyin.cpp getLabel.cpp HTS_audio.cpp HTS_engine.cpp HTS_gstream.cpp HTS_label.cpp HTS_misc.cpp HTS_model.cpp HTS_pstream.cpp HTS_sstream.cpp HTS_vocoder.cpp inter_lib.cpp ProsodicAnalysis.cpp str_fun.cpp Table.cpp Vocoder.cpp
@@ -21,10 +21,10 @@
          HTS_sstream.cpp
          HTS_vocoder.cpp
          inter_lib.cpp
-     1>inter_lib.cpp(501): warning C4101: “msd_frame”: 未引用的局部变量
-     1>inter_lib.cpp(508): warning C4101: “teof”: 未引用的局部变量
-     1>inter_lib.cpp(502): warning C4101: “temp”: 未引用的局部变量
-     1>inter_lib.cpp(501): warning C4101: “len”: 未引用的局部变量
+     1>inter_lib.cpp(483): warning C4101: “msd_frame”: 未引用的局部变量
+     1>inter_lib.cpp(527): warning C4101: “teof”: 未引用的局部变量
+     1>inter_lib.cpp(484): warning C4101: “temp”: 未引用的局部变量
+     1>inter_lib.cpp(483): warning C4101: “len”: 未引用的局部变量
          ProsodicAnalysis.cpp
          str_fun.cpp
          Table.cpp
@@ -59,4 +59,4 @@
 
 生成成功。
 
-已用时间 00:00:03.25
+已用时间 00:00:03.72

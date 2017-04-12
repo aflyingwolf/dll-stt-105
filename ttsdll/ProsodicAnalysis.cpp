@@ -32,6 +32,8 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
 {
     char temp[20];
     int i,len;
+
+	// 前后2个词 当前词信息  
     if(pos==0){
         strcpy(feats[0],"U00:_B-2");
         strcpy(feats[1],"U01:_B-1");
@@ -69,6 +71,7 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
         strcat(feats[4],wordseq[pos+2]);
     }
 
+	// 前后两个词的词性 和 当前词词性信息 
     if(pos==0){
         strcpy(feats[5],"U05:_B-2");
         strcpy(feats[6],"U06:_B-1");
@@ -106,6 +109,7 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
         strcat(feats[9],posseq[pos+2]);
     }
 
+	// 前面1个词词性 和 当前词词性 
     if(pos==0){
         strcpy(feats[10],"U10:_B-1/");
         strcat(feats[10],posseq[pos]);
@@ -117,6 +121,7 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
         strcat(feats[10],posseq[pos]);
     }
 
+	// 当前词 和 后一个词 的词性信息 
     if(pos==nWords-1){
         strcpy(feats[11],"U11:");
         strcat(feats[11],posseq[pos]);
@@ -130,12 +135,13 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
         strcat(feats[11],posseq[pos+1]);
     }
 
+	// 前中后  距离其所在韵律词首的距离 
     if(pos==0){
         strcpy(feats[12],"U12:_B-1");
     }
     else{
         strcpy(feats[12],"U12:");
-        itoa(strlen(wordseq[pos-1])/2,temp,10);
+        itoa(strlen(wordseq[pos-1])/2,temp,10);  // 前一个词 的 长度??
         strcat(feats[12],temp);
     }
     strcpy(feats[13],"U13:");
@@ -146,21 +152,25 @@ void GetProsodicWordFeat(char **wordseq,char **posseq,int pos,int nWords,char **
     }
     else{
         strcpy(feats[14],"U14:");
-        itoa(strlen(wordseq[pos+1])/2,temp,10);
+        itoa(strlen(wordseq[pos+1])/2,temp,10); // 后一个词的长度 
         strcat(feats[14],temp);
     }
+
+	// 为1表示当前词是韵律词切分处  
     if(pos==0){
-        itoa(strlen(wordseq[pos])/2,temp,10);
+        itoa(strlen(wordseq[pos])/2,temp,10);   // 当前词长度 
         strcpy(feats[15],"U15:");
         strcat(feats[15],temp);
     }
     else{
         len=strlen(wordseq[pos])/2;
-        for(i=pos-1;i>=0;i--){
+        for(i=pos-1;i>=0;i--)
+		{
+			// 前面的每个词  找到result ==1的那个word_i
             if(result[i]==1){
                 break;
             }
-            len=len+strlen(wordseq[i])/2;
+            len=len+strlen(wordseq[i])/2; // len加上word_i的长度   
         }
         itoa(len,temp,10);
         strcpy(feats[15],"U15:");

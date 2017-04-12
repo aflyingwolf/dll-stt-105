@@ -113,7 +113,10 @@ void HTS_Label_load_from_fn(HTS_Label * label, int sampling_rate, int fperiod,
    fclose(fp);
 }
 
-/* HTS_Label_load_from_fp: load label from file pointer */
+/* 
+// HTS_Label_load_from_fp: load label from file pointer 
+// 读取 label.txt 文件到 HTS_Label 结构中 
+*/
 void HTS_Label_load_from_fp(HTS_Label * label, int sampling_rate, int fperiod,
                             FILE * fp)
 {
@@ -124,28 +127,37 @@ void HTS_Label_load_from_fp(HTS_Label * label, int sampling_rate, int fperiod,
 
    if (label->head || label->size != 0)
       HTS_error(1, "HTS_Label_load_from_fp: label is not initialized.\n");
+   
    /* parse label file */
-   while (HTS_get_token(fp, buff)) {
+   while (HTS_get_token(fp, buff)) 
+   {
       if (!isgraph((int) buff[0]))
          break;
       label->size++;
 
-      if (lstring) {
-         lstring->next =
-             (HTS_LabelString *) HTS_calloc(1, sizeof(HTS_LabelString));
+      if (lstring) 
+	  {
+		  // 当前结点不为空 非第一个结点 
+         lstring->next = (HTS_LabelString *) HTS_calloc(1, sizeof(HTS_LabelString));
          lstring = lstring->next;
-      } else {                  /* first time */
+      } else 
+	  {                  
+		  // first time 
          lstring = (HTS_LabelString *) HTS_calloc(1, sizeof(HTS_LabelString));
          label->head = lstring;
       }
-      if (isdigit_string(buff)) {       /* has frame infomation */
+
+      if (isdigit_string(buff)) 
+	  {       
+		 // has frame infomation 带有时间信息的格式   st_time end_time string 
          start = atof(buff);
          HTS_get_token(fp, buff);
          end = atof(buff);
          HTS_get_token(fp, buff);
          lstring->start = rate * start;
          lstring->end = rate * end;
-      } else {
+      } else 
+	  {
          lstring->start = -1.0;
          lstring->end = -1.0;
       }

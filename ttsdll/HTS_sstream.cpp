@@ -65,7 +65,9 @@ static void HTS_set_duration(int *duration, double *mean, double *vari,
    double temp1, temp2;
    double rho = 0.0;
 
-   if (frame_length != 0.0) {   /* if frame length is specified, rho is determined */
+   if (frame_length != 0.0) 
+   {   
+	   /* if frame length is specified, rho is determined */
       temp1 = 0.0;
       temp2 = 0.0;
       for (i = 0; i < size; i++) {
@@ -74,7 +76,8 @@ static void HTS_set_duration(int *duration, double *mean, double *vari,
       }
       rho = (frame_length - temp1) / temp2;
    }
-   for (i = 0; i < size; i++) {
+   for (i = 0; i < size; i++) 
+   {
       temp1 = mean[i] + rho * vari[i] + *remain;
       duration[i] = (int) (temp1 + 0.5);
       if (duration[i] < 1)
@@ -94,7 +97,11 @@ void HTS_SStreamSet_initialize(HTS_SStreamSet * sss)
    sss->total_frame = 0;
 }
 
-/* HTS_SStreamSet_create: parse label and determine state duration */
+/* 
+// HTS_SStreamSet_create: parse label and determine state duration 
+// 参数规划的核心函数.
+// 解析label序列  计算状态持续时间等 
+*/
 void HTS_SStreamSet_create(HTS_SStreamSet * sss, HTS_ModelSet * ms,
                            HTS_Label * label, double *duration_iw,
                            double **parameter_iw, double **gv_iw)
@@ -109,23 +116,29 @@ void HTS_SStreamSet_create(HTS_SStreamSet * sss, HTS_ModelSet * ms,
    int next_time;
    int next_state;
 
-   /* initialize state sequence */
+   // initialize state sequence 
+   // 每个label 包含 sss->nstate 个状态 
    sss->nstate = HTS_ModelSet_get_nstate(ms);
    sss->nstream = HTS_ModelSet_get_nstream(ms);
    sss->total_frame = 0;
    sss->total_state = HTS_Label_get_size(label) * sss->nstate;
    sss->duration = (int *) HTS_calloc(sss->total_state, sizeof(int));
    sss->sstream = (HTS_SStream *) HTS_calloc(sss->nstream, sizeof(HTS_SStream));
-   for (i = 0; i < sss->nstream; i++) {
+
+   for (i = 0; i < sss->nstream; i++) 
+   {
       sst = &sss->sstream[i];
       sst->vector_length = HTS_ModelSet_get_vector_length(ms, i);
       sst->mean = (double **) HTS_calloc(sss->total_state, sizeof(double *));
       sst->vari = (double **) HTS_calloc(sss->total_state, sizeof(double *));
+
       if (HTS_ModelSet_is_msd(ms, i))
          sst->msd = (double *) HTS_calloc(sss->total_state, sizeof(double));
       else
          sst->msd = NULL;
-      for (j = 0; j < sss->total_state; j++) {
+
+      for (j = 0; j < sss->total_state; j++) 
+	  {
          sst->mean[j] =
              (double *) HTS_calloc(sst->vector_length, sizeof(double));
          sst->vari[j] =
@@ -169,11 +182,17 @@ void HTS_SStreamSet_create(HTS_SStreamSet * sss, HTS_ModelSet * ms,
        (double *) HTS_calloc(sss->nstate * HTS_Label_get_size(label),
                              sizeof(double));
    duration_remain = 0.0;
+
    for (i = 0; i < HTS_Label_get_size(label); i++)
-      HTS_ModelSet_get_duration(ms, HTS_Label_get_string(label, i),
-                                &duration_mean[i * sss->nstate],
-                                &duration_vari[i * sss->nstate], duration_iw);
-   if (HTS_Label_get_frame_specified_flag(label)) {
+   {
+	   //todo 
+	   HTS_ModelSet_get_duration(ms, HTS_Label_get_string(label, i),
+		   &duration_mean[i * sss->nstate],
+		   &duration_vari[i * sss->nstate], duration_iw);
+   }
+
+   if (HTS_Label_get_frame_specified_flag(label)) 
+   {
       /* use duration set by user */
       next_time = 0;
       next_state = 0;
@@ -198,18 +217,22 @@ void HTS_SStreamSet_create(HTS_SStreamSet * sss, HTS_ModelSet * ms,
          }
          state += sss->nstate;
       }
-   } else {
+   } else 
+   {
       /* determine frame length */
-      if (HTS_Label_get_speech_speed(label) != 1.0) {
+      if (HTS_Label_get_speech_speed(label) != 1.0) 
+	  {
          temp1 = 0.0;
          for (i = 0; i < HTS_Label_get_size(label) * sss->nstate; i++) {
             temp1 += duration_mean[i];
          }
          frame_length = temp1 / HTS_Label_get_speech_speed(label);
-      } else {
+      } else 
+	  {
          frame_length = 0.0;
       }
       /* set state duration */
+	  // 最终计算 持续时间 
       HTS_set_duration(sss->duration, duration_mean, duration_vari,
                        &duration_remain,
                        HTS_Label_get_size(label) * sss->nstate, frame_length);

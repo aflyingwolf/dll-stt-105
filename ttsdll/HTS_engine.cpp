@@ -113,7 +113,10 @@ void HTS_Engine_initialize(HTS_Engine * engine, int nstream)
    HTS_GStreamSet_initialize(&engine->gss);
 }
 
-/* HTS_Engine_load_duratin_from_fn: load duration pdfs, trees and number of state from file names */
+/* 
+	// HTS_Engine_load_duratin_from_fn: load duration pdfs, trees and number of state from file names 
+	// 载入 dur模型，变量 ： // engine | dur.pdf | tree-dur.inf | num_interp=1
+*/
 void HTS_Engine_load_duration_from_fn(HTS_Engine * engine, char **pdf_fn,
                                       char **tree_fn, int interpolation_size)
 {
@@ -448,7 +451,11 @@ int HTS_Engine_get_nstate(HTS_Engine * engine)
    return HTS_ModelSet_get_nstate(&engine->ms);
 }
 
-/* HTS_Engine_load_label_from_fn: load label from file name */
+
+/*
+// HTS_Engine_load_label_from_fn: load label from file name 
+// 读取 label.txt 文件到 HTS_Label 结构中
+*/
 void HTS_Engine_load_label_from_fn(HTS_Engine * engine, char *fn)
 {
    HTS_Label_load_from_fn(&engine->label, engine->global.sampling_rate,
@@ -477,8 +484,13 @@ void HTS_Engine_load_label_from_string_list(HTS_Engine * engine, char **data,
                                    engine->global.fperiod, data, size);
 }
 
-/* HTS_Engine_create_sstream: parse label and determine state duration */
+
+/*
+// HTS_Engine_create_sstream: parse label and determine state duration
 // info-szm  sss 生成的部分
+// 参数规划的核心函数.
+// 解析label序列  计算状态持续时间等
+*/
 void HTS_Engine_create_sstream(HTS_Engine * engine)
 {
    HTS_SStreamSet_create(&engine->sss, &engine->ms, &engine->label,
@@ -689,6 +701,7 @@ void HTS_Engine_save_information(HTS_Engine * engine, FILE * fp)
 }
 
 /* HTS_Engine_save_label: output label with time */
+// add-szm  输入label序列 和 持续时间信息 
 void HTS_Engine_save_label(HTS_Engine * engine, FILE * fp)
 {
    int i, j;
@@ -700,7 +713,9 @@ void HTS_Engine_save_label(HTS_Engine * engine, FILE * fp)
    const double rate =
        engine->global.fperiod * 1e+7 / engine->global.sampling_rate;
 
-   for (i = 0, state = 0, frame = 0; i < HTS_Label_get_size(label); i++) {
+   for (i = 0, state = 0, frame = 0; i < HTS_Label_get_size(label); i++) 
+   {
+	   // 每个label序列 计算nstate个状态的dur之和 
       for (j = 0, duration = 0; j < nstate; j++)
          duration += HTS_SStreamSet_get_duration(sss, state++);
       /* in HTK & HTS format */
@@ -802,7 +817,10 @@ void HTS_Engine_save_riff(HTS_Engine * engine, FILE * fp)
    }
 }
 
-/* HTS_Engine_refresh: free model per one time synthesis */
+/* 
+	// HTS_Engine_refresh: free model per one time synthesis 
+	// 清空engine中的 : gss  pss  sss  label 
+*/
 void HTS_Engine_refresh(HTS_Engine * engine)
 {
    /* free generated parameter stream set */
