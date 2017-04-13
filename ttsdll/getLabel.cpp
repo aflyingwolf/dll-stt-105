@@ -1509,21 +1509,309 @@ void TTS_Label_Init(){
 }
 
 
-void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname){
+/*
+	szm 修改后的结果 
+*/
+void PrintLabel(TtsLabelCharInfo * cif, short sNum, char *fname){
+	int i, k;
+	FILE *fp;
+	fp = fopen(fname, "w");
+	//   p1^p2-p3+p4=p5@p6_p7/A:a1_a2_a3/B:b1-b2-b3@b4-b5&b6-b7#b8-b9$b10-b11!b12-b13;b14-b15|b16/C:c1+c2+c3
+	//   /D:d1_d2/E:e1+e2@e3+e4&e5+e6#e7+e8/F:f1_f2/G:g1
+
+	////ori-105 bak
+	//fprintf(fp, "nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!", cif[0].shengmu, cif[0].yunmu);
+	//fprintf(fp, "0-%d;x-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x", cif[0].CharInSentNum, cif[0].PwInSentNum);
+	//fprintf(fp, "#0+%d/F:0_0/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
+
+	
+	//// todo
+	fprintf(fp, "nu^nu-sil+%s=%s@x_x", cif[0].shengmu, cif[0].yunmu);
+	// 前后音节的调型    x x sil char1 char2 
+	fprintf(fp, "/A:x_x_x/B:%d-%d", cif[0].yindiao, cif[1].yindiao);
+	// 音节在韵律词、韵律短语、语调短语、句子 的位置（左右）  
+	fprintf(fp, "-1@1-1&1-1#1-1$1");
+	// 韵律词、韵律短语、语调短语、句子 包含音节数
+	fprintf(fp, "-1!1-1;%d", cif[0].CharInSentNum);
+	// 韵律词在韵律短语、语调短语、句子 的位置（左右）
+	fprintf(fp, "-x|x/C:x+x+x/D:x_x/E:1+%d@x+x&x+x", cif[0].PwInSentNum);
+	
+	fprintf(fp, "#1+%d/F:1_1/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
+	
+	for (i = 0; i<sNum; i++)
+	{
+		// 每一个 音节
+		for (k = 1; k <= 2; k++)
+		{
+			// 声母 韵母 
+			//p1
+			if (k == 1)
+			{
+				// 声母
+				if (i == 0)
+				{
+					// 第一个char 
+					fprintf(fp, "nu");
+				}
+				else
+				{
+					if (cif[i].CharInIpPos == 1)
+					{
+						fprintf(fp, "%s", cif[i - 1].yunmu);
+					}
+					else
+					{
+						fprintf(fp, "%s", cif[i - 1].shengmu);
+					}
+				}
+			}
+			else
+			{
+				// 韵母 
+				if (i == 0)
+				{
+					// 第一个char 
+					fprintf(fp, "sil");
+				}
+				else
+				{
+					if (cif[i].CharInIpPos == 1)
+					{
+						fprintf(fp, "sil");
+					}
+					else
+					{
+						fprintf(fp, "%s", cif[i - 1].yunmu);
+					}
+				}
+			}
+			//p2
+			if (k == 1)
+			{
+				if (i == 0)
+				{
+					fprintf(fp, "^sil");
+				}
+				else
+				{
+					if (cif[i].CharInIpPos == 1)
+					{
+						fprintf(fp, "^sil");
+					}
+					else
+					{
+						fprintf(fp, "^%s", cif[i - 1].yunmu);
+					}
+				}
+			}
+			else
+			{
+				fprintf(fp, "^%s", cif[i].shengmu);
+			}
+			//p3
+			if (k == 1)
+			{
+				fprintf(fp, "-%s", cif[i].shengmu);
+			}
+			else
+			{
+				fprintf(fp, "-%s", cif[i].yunmu);
+			}
+			//p4
+			if (k == 1){
+				fprintf(fp, "+%s", cif[i].yunmu);
+			}
+			else
+			{
+				if (i<sNum - 1){
+					if (cif[i].CharInIpPos == cif[i].CharInIpNum){
+						fprintf(fp, "+sil");
+					}
+					else{
+						fprintf(fp, "+%s", cif[i + 1].shengmu);
+					}
+				}
+				else{
+					fprintf(fp, "+sil");
+				}
+			}
+			//p5
+			if (k == 1)
+			{
+				if (i<sNum - 1){
+					if (cif[i].CharInIpPos == cif[i].CharInIpNum){
+						fprintf(fp, "=sil");
+					}
+					else{
+						fprintf(fp, "=%s", cif[i + 1].shengmu);
+					}
+				}
+				else{
+					fprintf(fp, "=sil");
+				}
+			}
+			else
+			{
+				if (i<sNum - 1){
+					if (cif[i].CharInIpPos == cif[i].CharInIpNum){
+						fprintf(fp, "=%s", cif[i + 1].shengmu);
+					}
+					else{
+						fprintf(fp, "=%s", cif[i + 1].yunmu);
+					}
+				}
+				else{
+					fprintf(fp, "=nu");
+				}
+			}
+			//p6
+			fprintf(fp, "@%d", k);
+			//p7
+			if (k == 1)
+			{
+				fprintf(fp, "_%d", 1 - isQing(cif[i].shengmu));
+			}
+			else{
+				fprintf(fp, "_%d", 1 - isQing(cif[i].yunmu));
+			}
+			//a1
+			if (i >= 2){
+				fprintf(fp, "/A:%d", cif[i - 2].yindiao);
+			}
+			else{
+				fprintf(fp, "/A:0");
+			}
+			//a2
+			if (i >= 1){
+				fprintf(fp, "_%d", cif[i - 1].yindiao);
+			}
+			else{
+				fprintf(fp, "_0");
+			}
+			//a3
+			fprintf(fp, "_%d", cif[i].yindiao);
+			//b1
+			if (i<sNum - 1){
+				fprintf(fp, "/B:%d", cif[i + 1].yindiao);
+			}
+			else{
+				fprintf(fp, "/B:0");
+			}
+			//b2
+			if (i<sNum - 2){
+				fprintf(fp, "-%d", cif[i + 2].yindiao);
+			}
+			else{
+				fprintf(fp, "-0");
+			}
+			//b3
+			fprintf(fp, "-%d", cif[i].CharInPwPos);
+			//b4
+			fprintf(fp, "@%d", cif[i].CharInPwNum - cif[i].CharInPwPos + 1);
+			//b5
+			fprintf(fp, "-%d", cif[i].CharInPpPos);
+			//b6
+			fprintf(fp, "&%d", cif[i].CharInPpNum - cif[i].CharInPpPos + 1);
+			//b7
+			fprintf(fp, "-%d", cif[i].CharInIpPos);
+			//b8
+			fprintf(fp, "#%d", cif[i].CharInIpNum - cif[i].CharInIpPos + 1);
+			//b9
+			fprintf(fp, "-%d", cif[i].CharInSentPos);
+			//b10
+			fprintf(fp, "$%d", cif[i].CharInSentNum - cif[i].CharInSentPos + 1);
+			//b11
+			fprintf(fp, "-%d", cif[i].CharInPwNum);
+			//b12
+			fprintf(fp, "!%d", cif[i].CharInPpNum);
+			//b13
+			fprintf(fp, "-%d", cif[i].CharInIpNum);
+			//b14
+			fprintf(fp, ";%d", cif[i].CharInSentNum);
+			//b15
+			fprintf(fp, "-%d", cif[i].PwInPpPos);
+			//b16
+			fprintf(fp, "|%d", cif[i].PwInPpNum - cif[i].PwInPpPos + 1);
+			//c1
+			fprintf(fp, "/C:%d", cif[i].PwInIpPos);
+			//c2
+			fprintf(fp, "+%d", cif[i].PwInIpNum - cif[i].PwInIpPos + 1);
+			//c3
+			fprintf(fp, "+%d", cif[i].PwInSentPos);
+			//d1
+			fprintf(fp, "/D:%d", cif[i].PwInSentNum - cif[i].PwInSentPos + 1);
+			//d2
+			fprintf(fp, "_%d", cif[i].PwInPpNum);
+			//e1
+			fprintf(fp, "/E:%d", cif[i].PwInIpNum);
+			//e2
+			fprintf(fp, "+%d", cif[i].PwInSentNum);
+			//e3
+			fprintf(fp, "@%d", cif[i].PpInIpPos);
+			//e4
+			fprintf(fp, "+%d", cif[i].PpInIpNum - cif[i].PpInIpPos + 1);
+			//e5
+			fprintf(fp, "&%d", cif[i].PpInSentPos);
+			//e6
+			fprintf(fp, "+%d", cif[i].PpInSentNum - cif[i].PpInSentPos + 1);
+			//e7
+			fprintf(fp, "#%d", cif[i].PpInIpNum);
+			//e8
+			fprintf(fp, "+%d", cif[i].PpInSentNum);
+			//f1
+			fprintf(fp, "/F:%d", cif[i].IpInSentPos);
+			//f2
+			fprintf(fp, "_%d", cif[i].IpInSentNum - cif[i].IpInSentPos + 1);
+			//g1
+			fprintf(fp, "/G:%d", cif[i].IpInSentNum);
+			//line end
+			fprintf(fp, "\n");
+			if (cif[i].CharInIpPos == cif[i].CharInIpNum && k == 2)
+			{
+				fprintf(fp, "%s^%s-sil+", cif[i].shengmu, cif[i].yunmu);
+				if (i<sNum - 1){
+					fprintf(fp, "%s=%s@x_x/A:x_%d_x/B:%d-x-x@x-x&x-x#x-x$x-x!x-",
+						cif[i + 1].shengmu, cif[i + 1].yunmu, cif[i].yindiao, cif[i + 1].yindiao);
+				}
+				else{
+					fprintf(fp, "nu=nu@x_x/A:x_%d_x/B:x-x-x@x-x&x-x#x-x$x-x!x-", cif[i].yindiao);
+				}
+				fprintf(fp, "%d;%d-x|x/C:x+x+x/D:d1_d2/E:%d+%d@x+x&x+x#", cif[i].CharInIpNum, cif[i].CharInSentNum,
+					cif[i].PwInIpNum, cif[i].PwInSentNum);
+				fprintf(fp, "%d+%d/F:%d_%d/G:%d\n", cif[i].PpInIpNum, cif[i].PpInSentNum, cif[i].IpInSentPos,
+					cif[i].IpInSentNum - cif[i].IpInSentPos + 1, cif[i].IpInSentNum);
+			}
+		}
+
+	}
+
+	fclose(fp);
+
+}
+
+/*
+	ori-105 路程原始备份结果 
+*/
+void PrintLabel_lucheng(TtsLabelCharInfo * cif,short sNum,char *fname)
+{
     int i,k;
     FILE *fp;
     fp=fopen(fname,"w");
     //   p1^p2-p3+p4=p5@p6_p7/A:a1_a2_a3/B:b1-b2-b3@b4-b5&b6-b7#b8-b9$b10-b11!b12-b13;b14-b15|b16/C:c1+c2+c3
     //   /D:d1_d2/E:e1+e2@e3+e4&e5+e6#e7+e8/F:f1_f2/G:g1
 
+	 //ori-105 bak
     fprintf(fp,"nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!",cif[0].shengmu,cif[0].yunmu);
     fprintf(fp,"0-%d;x-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x",cif[0].CharInSentNum,cif[0].PwInSentNum);
     fprintf(fp,"#0+%d/F:0_0/G:%d\n",cif[0].PpInSentNum,cif[0].IpInSentNum);
+	
+	
 	//// todo 
-	//fprintf(fp, "nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!", cif[0].shengmu, cif[0].yunmu);
-	//fprintf(fp, "0-x;%d-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x", cif[0].CharInSentNum, cif[0].PwInSentNum);
-	//fprintf(fp, "#0+%d/F:0_0/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
-    for(i=0;i<sNum;i++)
+	fprintf(fp, "nu^nu-sil+%s=%s@x_x/A:x_x_x/B:x-x-x@x-x&x-x#x-x$x-x!", cif[0].shengmu, cif[0].yunmu);
+	fprintf(fp, "0-x;%d-x|x/C:x+x+x/D:x_x/E:0+%d@x+x&x+x", cif[0].CharInSentNum, cif[0].PwInSentNum);
+	fprintf(fp, "#0+%d/F:0_0/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
+    
+	for(i=0;i<sNum;i++)
 	{
 		// 每一个 音节
         for(k=1;k<=2;k++)

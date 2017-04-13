@@ -66,6 +66,12 @@ short *tag :	   sNum 个pos标记(01234)
 */
 void TtsLabel_ObtainLabelCharSeq(TtsLabelCharInfo * cif,char **pinyinSeq,short sNum,short * tag);
 void TTS_Label_Init();
+
+/*
+ori-105 路程原始备份结果
+*/
 void PrintLabel(TtsLabelCharInfo * cif,short sNum,char *fname);
+
+void PrintLabel_lucheng(TtsLabelCharInfo * cif, short sNum, char *fname);
 
 #endif
