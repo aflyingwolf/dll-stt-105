@@ -392,8 +392,11 @@ void RefreshFeatForIP(char **wordseq,char **posseq,int pos,int nWords,char **fea
 }
 
 
-
-void ProsodicPhraseAnalysis(char **wordseq,char **posseq,int nWords,int *pwresult,int *result,Table *ppModel,Table *ipModel){
+/*
+	// 根据韵律短语model(pp)、语调短语model（ip） 得到韵律短语划分边界 
+*/
+void ProsodicPhraseAnalysis(char **wordseq,char **posseq,int nWords,int *pwresult,int *result,Table *ppModel,Table *ipModel)
+{
     int i,j;
     double cost,cost2;
     static char **ppfeats=NULL;

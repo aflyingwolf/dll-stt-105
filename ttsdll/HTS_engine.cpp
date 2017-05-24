@@ -763,10 +763,11 @@ int HTS_Engine_speech2short(HTS_Engine * engine, short *out_short, int len)
 	short temp;
 	HTS_GStreamSet *gss = &engine->gss;
 
-	for (i = 0; i < HTS_GStreamSet_get_total_nsample(gss); i++) {
+	for (i = 0; i < HTS_GStreamSet_get_total_nsample(gss); i++) 
+	{
 		temp = HTS_GStreamSet_get_speech(gss, i);
 		//fwrite(&temp, sizeof(short), 1, fp);
-		if (i>len)
+		if (i>len-1)
 		{
 			return -1;
 		}

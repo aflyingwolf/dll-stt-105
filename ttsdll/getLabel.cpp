@@ -1512,7 +1512,8 @@ void TTS_Label_Init(){
 /*
 	szm 修改后的结果 
 */
-void PrintLabel(TtsLabelCharInfo * cif, short sNum, char *fname){
+void PrintLabel(TtsLabelCharInfo * cif, short sNum, char *fname)
+{
 	int i, k;
 	FILE *fp;
 	fp = fopen(fname, "w");
@@ -1535,6 +1536,7 @@ void PrintLabel(TtsLabelCharInfo * cif, short sNum, char *fname){
 	fprintf(fp, "-1!1-1;%d", cif[0].CharInSentNum);
 	// 韵律词在韵律短语、语调短语、句子 的位置（左右）
 	fprintf(fp, "-x|x/C:x+x+x/D:x_x/E:1+%d@x+x&x+x", cif[0].PwInSentNum);
+	//fprintf(fp, "-1|1/C:1+1+0/D:%d_x/E:1+%d@x+x&x+x", cif[0].PpInSentNum + 1, cif[0].PwInSentNum);
 	
 	fprintf(fp, "#1+%d/F:1_1/G:%d\n", cif[0].PpInSentNum, cif[0].IpInSentNum);
 	

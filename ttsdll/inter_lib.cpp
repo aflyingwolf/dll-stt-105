@@ -128,7 +128,8 @@ int TTS::init(const char *model_dir)
 
 	// 帧移 16k对应80   1/200=5毫秒   
 	// ori-105=220   修改成80之后 语速嗷嗷快。。。
-	int fperiod = 220; // -p 	
+	int fperiod = 200; // -p  44.1k
+	//int fperiod = 80; // -p  16k   
 
 	// ori-105=0.55  改成0.2|0.42之后声音不清 像小孩  0.6|0.8像老牛
 	double alpha = 0.55;  // -a hts内部代码默认: 16000 80帧移 0.42 
@@ -151,6 +152,7 @@ int TTS::init(const char *model_dir)
 	// ori-105 全是 1.0 
 	// 修改成 10.0|2.0 后，声音清晰，但是：短句子的开头部分丢失
 	// 修改成 0.3 后，声音变得飘飘然  像远场含糊不清 
+	// 1.8 ok 
 	double gv_weight_mgc = 1.0;
 	double gv_weight_lf0 = 1.0;
 	double gv_weight_lpf = 1.0;
@@ -323,24 +325,23 @@ int TTS::init(const char *model_dir)
 	/* load gv[0] (GV for spectrum) */
 	if (num_interp == num_ms_gvm) {
 		if (num_ms_gvm == num_ts_gvm)
-			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvm, fn_ts_gvm, 0,
-			num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvm, fn_ts_gvm, 0,num_interp);
 		else
 			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvm, NULL, 0, num_interp);
 	}
 	/* load gv[1] (GV for lf0) */
-	if (num_interp == num_ms_gvl) {
+	if (num_interp == num_ms_gvl) 
+	{
 		if (num_ms_gvl == num_ts_gvl)
-			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvl, fn_ts_gvl, 1,
-			num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvl, fn_ts_gvl, 1,num_interp);
 		else
 			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvl, NULL, 1, num_interp);
 	}
 	/* load gv[2] (GV for low-pass filter) */
-	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0)) {
+	if (num_interp == num_ms_gvf && (num_ms_lpf > 0 || num_ts_lpf > 0)) 
+	{
 		if (num_ms_gvf == num_ts_gvf)
-			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvf, fn_ts_gvf, 0,
-			num_interp);
+			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvf, fn_ts_gvf, 0,num_interp);
 		else
 			HTS_Engine_load_gv_from_fn(engine, fn_ms_gvf, NULL, 2, num_interp);
 	}
@@ -564,7 +565,9 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	ProsodicPhraseAnalysis(wordseq, posseq, nWord, pwr, ppr, pp, ip); 
 
 	// 通过 pwr和ppr 得到每个pinyin对应的ptag值
-	//统一转换格式，生成ptag，ptag数字1，2，3 分别表示韵律词尾，二级韵短尾，一级韵短尾 0表示非韵律词尾
+	//统一转换格式，生成ptag，ptag数字0, 1，2，3,4
+	// 0 表示当前char 和 后面char 共同组成韵律词 ，非韵律词
+	// 1 表示 韵律词划分处 ;  2 表示 韵律短语 ；  3 表示 语调短语；  4 默认句尾
     GetProsodicTag(wordseq, nWord, pwr, ppr, ptag);     
     
 	fprintf(fp_log, "GetProsodicTag ok!\n");
@@ -658,7 +661,7 @@ int TTS::line2short_array(const char *line, short *out, int out_size)
 	// = 0.5时音色变的更像女生了。。。
 	double half_tone = 0.0;    
 
-	// ori-105=FALSE  改成TRUE 无变化 
+	// ori-105=FALSE  表示输入的label序列是否带有时间信息 改成TRUE 无变化 
 	HTS_Boolean phoneme_alignment = FALSE; 
 	 
 	// ori-105=1.0  改成1.2后 句子开头部分缺失。。。
